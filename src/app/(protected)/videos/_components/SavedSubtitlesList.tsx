@@ -6,7 +6,7 @@ import { formatTime } from "./utils";
 type SavedSubtitlesListProps = {
   subtitles: Subtitle[] | undefined;
   isLoading: boolean;
-  onSubtitleClick: (startTime: number) => void;
+  onSubtitleClick: (startTime: number, endTime: number) => void;
 };
 
 export function SavedSubtitlesList({
@@ -31,7 +31,9 @@ export function SavedSubtitlesList({
       {subtitles.map((subtitle) => (
         <div
           key={subtitle.id}
-          onClick={() => onSubtitleClick(subtitle.start_time)}
+          onClick={() =>
+            onSubtitleClick(subtitle.start_time, subtitle.end_time)
+          }
           className="cursor-pointer rounded-lg border p-3 hover:bg-gray-50 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
@@ -39,7 +41,8 @@ export function SavedSubtitlesList({
               #{subtitle.index}
             </span>
             <span className="text-xs text-gray-500">
-              {formatTime(subtitle.start_time)} - {formatTime(subtitle.end_time)}
+              {formatTime(subtitle.start_time)} -{" "}
+              {formatTime(subtitle.end_time)}
             </span>
           </div>
           <div className="space-y-1">
@@ -54,4 +57,3 @@ export function SavedSubtitlesList({
     </div>
   );
 }
-

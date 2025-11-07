@@ -23,7 +23,7 @@ export const videoSchema = z.object({
 export const subtitleSchema = z.object({
   start_time: z.number().min(0, "시작 시간을 입력하세요"),
   end_time: z.number().min(0, "종료 시간을 입력하세요"),
-  has_subtitle: z.boolean().default(true),
+  has_subtitle: z.boolean(),
   origin_text: z.string().optional(),
   blanked_text: z.string().optional(),
   translation: z.string().optional(),
@@ -64,5 +64,7 @@ export type SubtitleFormData = z.infer<typeof subtitleFormDataSchema>;
 export type YouTubePlayer = {
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
   playVideo: () => void;
+  pauseVideo: () => void;
+  getCurrentTime: () => number;
   destroy: () => void;
 };

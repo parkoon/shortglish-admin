@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -32,6 +32,7 @@ export default function SubtitleManagementPage() {
   const [pendingSubtitles, setPendingSubtitles] = useState<SubtitleFormData[]>(
     []
   );
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
 
   const { data: videos } = useVideosQuery();
@@ -96,11 +97,47 @@ export default function SubtitleManagementPage() {
     subtitleMutation.mutate(pendingSubtitles);
   };
 
-  const handleSubtitleClick = (startTime: number) => {
-    if (youtubePlayer) {
-      youtubePlayer.seekTo(startTime, true);
-      youtubePlayer.playVideo();
+  // 기존 interval 정리
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
+
+  const handleSubtitleClick = (startTime: number, endTime: number) => {
+    if (!youtubePlayer) return;
+
+    // 기존 interval 정리
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
+
+    // 시작 시간으로 이동하고 재생 시작
+    youtubePlayer.seekTo(startTime, true);
+    youtubePlayer.playVideo();
+
+    // 끝 시간에 도달하면 일시정지하는 인터벌 설정
+    intervalRef.current = setInterval(() => {
+      if (!youtubePlayer) {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        return;
+      }
+
+      const currentTime = youtubePlayer.getCurrentTime();
+      if (currentTime >= endTime) {
+        youtubePlayer.pauseVideo();
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      }
+    }, 100); // 100ms마다 체크
   };
 
   if (!video) {
