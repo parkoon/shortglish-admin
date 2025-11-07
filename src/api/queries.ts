@@ -13,7 +13,7 @@ import { queryKeys } from "./query-keys";
 // ============================================
 
 /**
- * 비디오 목록 조회 hook (Admin용)
+ * 영상 목록 조회 hook (Admin용)
  */
 export const useVideosQuery = () => {
   return useQuery({

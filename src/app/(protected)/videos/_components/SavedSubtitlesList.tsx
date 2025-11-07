@@ -73,8 +73,7 @@ export function SavedSubtitlesList({
 
   return (
     <>
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold">저장된 자막</h3>
+      <div className="mb-4 text-right">
         <Button
           size="sm"
           onClick={handleAddClick}

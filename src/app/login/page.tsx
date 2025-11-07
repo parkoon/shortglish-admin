@@ -32,7 +32,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated()) {
-      router.push("/dashboard");
+      router.push("/videos");
     }
   }, [router]);
 
@@ -42,7 +42,7 @@ export default function LoginPage() {
     if (success) {
       // 쿠키 설정 후 리다이렉트
       setTimeout(() => {
-        window.location.href = "/dashboard";
+        window.location.href = "/videos";
       }, 100);
     } else {
       setError("root", {

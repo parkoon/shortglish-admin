@@ -10,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,24 +21,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
 import { videoSchema, type VideoFormData } from "@/api";
+import type { Video } from "@/api";
 
-type VideoAddDialogProps = {
+type VideoEditDialogProps = {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: VideoFormData) => void;
+  video: Video | null;
+  onSubmit: (videoId: string, data: Partial<VideoFormData>) => void;
   isPending: boolean;
   error: Error | null;
 };
 
-export function VideoAddDialog({
+export function VideoEditDialog({
   isOpen,
   onOpenChange,
+  video,
   onSubmit,
   isPending,
   error,
-}: VideoAddDialogProps) {
+}: VideoEditDialogProps) {
   const form = useForm<VideoFormData>({
     resolver: zodResolver(videoSchema),
     defaultValues: {
@@ -52,47 +53,57 @@ export function VideoAddDialog({
       form.reset({
         status: "draft",
       });
+      return;
     }
-  }, [isOpen, form]);
+
+    if (video) {
+      form.reset({
+        id: video.id,
+        title: video.title,
+        thumbnail: video.thumbnail,
+        description: video.description || "",
+        duration: video.duration,
+        status: video.status,
+      });
+    }
+  }, [isOpen, video, form]);
 
   const handleSubmit = async (data: VideoFormData) => {
-    onSubmit(data);
+    if (!video) return;
+    
+    const { id, ...updateData } = data; // id는 제외하고 업데이트
+    onSubmit(video.id, updateData);
   };
+
+  if (!video) {
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          영상 추가
-        </Button>
-      </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>영상 추가</DialogTitle>
+          <DialogTitle>영상 수정</DialogTitle>
           <DialogDescription>
-            새로운 영상를 추가하세요. 기본 상태는 Draft입니다.
+            영상 정보를 수정하세요.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="id">영상 ID *</Label>
+              <Label htmlFor="edit-id">영상 ID</Label>
               <Input
-                id="id"
+                id="edit-id"
                 {...form.register("id")}
-                placeholder="예: ECXAFUmdJkI"
+                disabled
+                className="bg-gray-50"
               />
-              {form.formState.errors.id && (
-                <p className="text-sm text-red-600">
-                  {form.formState.errors.id.message}
-                </p>
-              )}
+              <p className="text-xs text-gray-500">영상 ID는 수정할 수 없습니다.</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="duration">재생시간 (초) *</Label>
+              <Label htmlFor="edit-duration">재생시간 (초) *</Label>
               <Input
-                id="duration"
+                id="edit-duration"
                 type="number"
                 {...form.register("duration", {
                   valueAsNumber: true,
@@ -107,9 +118,9 @@ export function VideoAddDialog({
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="title">제목 *</Label>
+            <Label htmlFor="edit-title">제목 *</Label>
             <Input
-              id="title"
+              id="edit-title"
               {...form.register("title")}
               placeholder="영상 제목을 입력하세요"
             />
@@ -120,9 +131,9 @@ export function VideoAddDialog({
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="thumbnail">썸네일 URL *</Label>
+            <Label htmlFor="edit-thumbnail">썸네일 URL *</Label>
             <Input
-              id="thumbnail"
+              id="edit-thumbnail"
               {...form.register("thumbnail")}
               placeholder="https://i.ytimg.com/vi/..."
             />
@@ -133,22 +144,22 @@ export function VideoAddDialog({
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">설명</Label>
+            <Label htmlFor="edit-description">설명</Label>
             <Input
-              id="description"
+              id="edit-description"
               {...form.register("description")}
               placeholder="영상 설명 (선택사항)"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="status">상태</Label>
+            <Label htmlFor="edit-status">상태</Label>
             <Controller
               name="status"
               control={form.control}
               render={({ field }) => (
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="상태를 선택하세요" />
@@ -175,7 +186,7 @@ export function VideoAddDialog({
               취소
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? "추가 중..." : "추가"}
+              {isPending ? "수정 중..." : "수정"}
             </Button>
           </DialogFooter>
         </form>
@@ -183,3 +194,4 @@ export function VideoAddDialog({
     </Dialog>
   );
 }
+

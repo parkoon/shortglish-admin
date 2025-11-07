@@ -163,12 +163,6 @@ export function SubtitleManagementDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onOpenChange} direction="right">
-      <DrawerHeader className="shrink-0">
-        <DrawerTitle>{video.title}</DrawerTitle>
-        <DrawerDescription>
-          자막을 클릭하면 해당 시간으로 영상이 이동합니다.
-        </DrawerDescription>
-      </DrawerHeader>
       <DrawerContent className="max-h-screen w-full">
         <div className="flex flex-col h-full">
           {/* YouTube 플레이어 */}
@@ -178,7 +172,9 @@ export function SubtitleManagementDrawer({
               onPlayerReady={setYoutubePlayer}
             />
           </div>
-
+          <DrawerHeader className="shrink-0">
+            <DrawerTitle>{video.title}</DrawerTitle>
+          </DrawerHeader>
           {/* 저장된 자막 */}
           <div className="flex-1 overflow-y-auto p-4">
             <SavedSubtitlesList

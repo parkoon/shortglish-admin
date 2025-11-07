@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Subtitles } from "lucide-react";
+import { Subtitles, Edit } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
 import { formatDuration } from "./utils";
 import type { Video } from "@/api";
@@ -18,11 +18,13 @@ import type { Video } from "@/api";
 type VideoListTableProps = {
   videos: Video[];
   onSubtitleManage: (video: Video) => void;
+  onEdit: (video: Video) => void;
 };
 
 export function VideoListTable({
   videos,
   onSubtitleManage,
+  onEdit,
 }: VideoListTableProps) {
   return (
     <div className="rounded-lg bg-white border border-gray-200">
@@ -40,7 +42,7 @@ export function VideoListTable({
             <TableHead className="w-[100px] font-semibold text-gray-700">
               재생시간
             </TableHead>
-            <TableHead className="w-[120px] font-semibold text-gray-700">
+            <TableHead className="w-[200px] font-semibold text-gray-700">
               액션
             </TableHead>
           </TableRow>
@@ -76,21 +78,31 @@ export function VideoListTable({
                   {formatDuration(video.duration)}
                 </TableCell>
                 <TableCell className="py-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onSubtitleManage(video)}
-                  >
-                    <Subtitles className="h-3 w-3" />
-                    자막 관리
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(video)}
+                    >
+                      <Edit className="mr-1 h-3 w-3" />
+                      수정
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onSubtitleManage(video)}
+                    >
+                      <Subtitles className="mr-1 h-3 w-3" />
+                      자막 관리
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))
           ) : (
             <TableRow>
               <TableCell colSpan={6} className="text-center text-gray-500">
-                비디오가 없습니다.
+                영상이 없습니다.
               </TableCell>
             </TableRow>
           )}

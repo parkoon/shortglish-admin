@@ -6,6 +6,7 @@
 
 import {
   createVideo,
+  updateVideo,
   createSubtitles,
   createSubtitle,
   updateSubtitle,
@@ -19,12 +20,22 @@ import type { Video, Subtitle } from "./types";
 // ============================================
 
 /**
- * 비디오 생성 mutation 함수
+ * 영상 생성 mutation 함수
  */
 export const createVideoMutation = async (
   video: VideoFormData
 ): Promise<Video> => {
   return createVideo(video);
+};
+
+/**
+ * 영상 수정 mutation 함수
+ */
+export const updateVideoMutation = async (
+  videoId: string,
+  video: Partial<VideoFormData>
+): Promise<Video> => {
+  return updateVideo(videoId, video);
 };
 
 // ============================================

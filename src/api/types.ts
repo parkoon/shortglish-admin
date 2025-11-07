@@ -12,7 +12,7 @@ import { z } from "zod";
 // ============================================
 
 export const videoSchema = z.object({
-  id: z.string().min(1, "비디오 ID를 입력하세요"),
+  id: z.string().min(1, "영상 ID를 입력하세요"),
   title: z.string().min(1, "제목을 입력하세요"),
   thumbnail: z.string().url("올바른 URL을 입력하세요"),
   description: z.string().optional(),

@@ -6,14 +6,9 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Home, Video, LogOut } from "lucide-react";
+import { Video, LogOut } from "lucide-react";
 
 const menuItems = [
-  {
-    title: "대시보드",
-    href: "/dashboard",
-    icon: Home,
-  },
   {
     title: "비디오",
     href: "/videos",

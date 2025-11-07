@@ -153,7 +153,7 @@ export default function SubtitleManagementPage() {
   if (!video) {
     return (
       <div className="flex min-h-full items-center justify-center bg-gray-50 p-8">
-        <div className="text-lg text-gray-600">비디오를 찾을 수 없습니다.</div>
+        <div className="text-lg text-gray-600">영상을 찾을 수 없습니다.</div>
       </div>
     );
   }

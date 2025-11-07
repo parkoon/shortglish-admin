@@ -11,7 +11,7 @@ import type { Video, Subtitle, VideoFormData, SubtitleFormData } from "./types";
 // ============================================
 
 /**
- * 비디오 목록 조회 (Admin용 - 모든 상태 포함)
+ * 영상 목록 조회 (Admin용 - 모든 상태 포함)
  */
 export const fetchVideos = async (): Promise<Video[]> => {
   const { data, error } = await supabase
@@ -27,7 +27,7 @@ export const fetchVideos = async (): Promise<Video[]> => {
 };
 
 /**
- * 비디오 생성 (Admin용)
+ * 영상 생성 (Admin용)
  */
 export const createVideo = async (video: VideoFormData): Promise<Video> => {
   const { data, error } = await supabase
@@ -38,6 +38,27 @@ export const createVideo = async (video: VideoFormData): Promise<Video> => {
 
   if (error) {
     throw new Error(`Failed to create video: ${error.message}`);
+  }
+
+  return data;
+};
+
+/**
+ * 영상 수정 (Admin용)
+ */
+export const updateVideo = async (
+  videoId: string,
+  video: Partial<VideoFormData>
+): Promise<Video> => {
+  const { data, error } = await supabase
+    .from("video_dev")
+    .update(video)
+    .eq("id", videoId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update video: ${error.message}`);
   }
 
   return data;
