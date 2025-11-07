@@ -1,25 +1,45 @@
 "use client";
 
-import { login } from "@/lib/actions";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { isAuthenticated } from "@/lib/auth";
+import { useAuth } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth();
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
-  async function handleSubmit(formData: FormData) {
+  useEffect(() => {
+    if (isAuthenticated()) {
+      router.push("/dashboard");
+    }
+  }, [router]);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    try {
-      await login(formData);
-    } catch (err) {
+    const formData = new FormData(e.currentTarget);
+    const username = formData.get("username") as string;
+    const password = formData.get("password") as string;
+
+    const success = login(username, password);
+    
+    if (!success) {
       setError("아이디 또는 비밀번호가 올바르지 않습니다.");
       setIsLoading(false);
     }
+  }
+
+  if (isAuthenticated()) {
+    return null;
   }
 
   return (
@@ -32,7 +52,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form action={handleSubmit} className="mt-8 space-y-6">
+        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">아이디</Label>
@@ -79,4 +99,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

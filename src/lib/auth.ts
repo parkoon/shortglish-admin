@@ -1,33 +1,29 @@
-import { cookies } from "next/headers";
-
 const SESSION_COOKIE_NAME = "admin_session";
-const SESSION_SECRET = "admin-secret-key-change-in-production";
 
-export async function createSession() {
-  const cookieStore = await cookies();
+// 클라이언트 사이드 쿠키 관리
+export function createSession() {
   const sessionId = crypto.randomUUID();
-  cookieStore.set(SESSION_COOKIE_NAME, sessionId, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 7, // 7일
-    path: "/",
-  });
+  document.cookie = `${SESSION_COOKIE_NAME}=${sessionId}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
   return sessionId;
 }
 
-export async function getSession() {
-  const cookieStore = await cookies();
-  return cookieStore.get(SESSION_COOKIE_NAME)?.value;
+export function getSession(): string | null {
+  if (typeof document === "undefined") return null;
+  
+  const cookies = document.cookie.split(";");
+  const sessionCookie = cookies.find((cookie) =>
+    cookie.trim().startsWith(`${SESSION_COOKIE_NAME}=`)
+  );
+  
+  if (!sessionCookie) return null;
+  
+  return sessionCookie.split("=")[1];
 }
 
-export async function deleteSession() {
-  const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE_NAME);
+export function deleteSession() {
+  document.cookie = `${SESSION_COOKIE_NAME}=; path=/; max-age=0`;
 }
 
-export async function isAuthenticated() {
-  const session = await getSession();
-  return !!session;
+export function isAuthenticated(): boolean {
+  return !!getSession();
 }
-

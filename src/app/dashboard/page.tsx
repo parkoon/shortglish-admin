@@ -1,17 +1,37 @@
-import { logout } from "@/lib/actions";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { isAuthenticated } from "@/lib/auth";
+import { useAuth } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { logout } = useAuth();
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push("/login");
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    logout();
+  };
+
+  if (!isAuthenticated()) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <h1 className="text-2xl font-bold text-gray-900">관리자 대시보드</h1>
-          <form action={logout}>
-            <Button type="submit" variant="outline">
-              로그아웃
-            </Button>
-          </form>
+          <Button onClick={handleLogout} variant="outline">
+            로그아웃
+          </Button>
         </div>
       </header>
 
@@ -28,4 +48,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
