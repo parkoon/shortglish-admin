@@ -12,7 +12,6 @@ export function useAuth() {
   const login = (username: string, password: string): boolean => {
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       createSession();
-      router.push("/dashboard");
       return true;
     }
     return false;
