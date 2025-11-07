@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { YouTubePlayer as YouTubePlayerType } from "@/api";
 
 declare global {
@@ -28,7 +28,6 @@ type YouTubePlayerProps = {
 
 export function YouTubePlayer({ videoId, onPlayerReady }: YouTubePlayerProps) {
   const playerRef = useRef<HTMLDivElement>(null);
-  const [player, setPlayer] = useState<YouTubePlayerType | null>(null);
 
   useEffect(() => {
     if (!playerRef.current) return;
@@ -52,7 +51,6 @@ export function YouTubePlayer({ videoId, onPlayerReady }: YouTubePlayerProps) {
             },
           });
           playerInstance = player;
-          setPlayer(player);
           onPlayerReady?.(player);
         }
       };
@@ -65,7 +63,6 @@ export function YouTubePlayer({ videoId, onPlayerReady }: YouTubePlayerProps) {
         },
       });
       playerInstance = player;
-      setPlayer(player);
       onPlayerReady?.(player);
     }
 
@@ -76,11 +73,5 @@ export function YouTubePlayer({ videoId, onPlayerReady }: YouTubePlayerProps) {
     };
   }, [videoId, onPlayerReady]);
 
-  return (
-    <div
-      ref={playerRef}
-      className="aspect-video w-full rounded-lg bg-black"
-    />
-  );
+  return <div ref={playerRef} className="aspect-video w-full bg-black" />;
 }
-

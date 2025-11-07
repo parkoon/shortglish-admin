@@ -2,16 +2,15 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { VideoAddDialog } from "./_components/VideoAddDialog";
 import { VideoListTable } from "./_components/VideoListTable";
-import { SubtitleManagementDrawer } from "./_components/SubtitleManagementDrawer";
 import { useVideosQuery, createVideoMutation, queryKeys } from "@/api";
 import type { Video, VideoFormData } from "@/api";
 
 export default function VideosPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const { data: videos, isLoading, error } = useVideosQuery();
@@ -29,8 +28,7 @@ export default function VideosPage() {
   };
 
   const handleSubtitleManage = (video: Video) => {
-    setSelectedVideo(video);
-    setIsDrawerOpen(true);
+    router.push(`/videos/${video.id}/subtitles`);
   };
 
   if (isLoading) {
@@ -77,12 +75,6 @@ export default function VideosPage() {
           onSubtitleManage={handleSubtitleManage}
         />
       </div>
-
-      <SubtitleManagementDrawer
-        isOpen={isDrawerOpen}
-        onOpenChange={setIsDrawerOpen}
-        video={selectedVideo}
-      />
     </div>
   );
 }

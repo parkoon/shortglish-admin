@@ -21,12 +21,16 @@ export const videoSchema = z.object({
 });
 
 export const subtitleSchema = z.object({
-  index: z.number().min(0, "순서를 입력하세요"),
   start_time: z.number().min(0, "시작 시간을 입력하세요"),
   end_time: z.number().min(0, "종료 시간을 입력하세요"),
-  origin_text: z.string().min(1, "원본 텍스트를 입력하세요"),
-  blanked_text: z.string().min(1, "빈칸 처리된 텍스트를 입력하세요"),
-  translation: z.string().min(1, "번역을 입력하세요"),
+  has_subtitle: z.boolean().default(true),
+  origin_text: z.string().optional(),
+  blanked_text: z.string().optional(),
+  translation: z.string().optional(),
+});
+
+export const subtitleFormDataSchema = subtitleSchema.extend({
+  index: z.number().min(0),
 });
 
 export type Video = {
@@ -54,7 +58,8 @@ export type Subtitle = {
 };
 
 export type VideoFormData = z.infer<typeof videoSchema>;
-export type SubtitleFormData = z.infer<typeof subtitleSchema>;
+export type SubtitleFormInput = z.infer<typeof subtitleSchema>;
+export type SubtitleFormData = z.infer<typeof subtitleFormDataSchema>;
 
 export type YouTubePlayer = {
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;

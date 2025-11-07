@@ -1,42 +1,37 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { subtitleSchema, type SubtitleFormData } from "@/api";
+import { Switch } from "@/components/ui/switch";
+import { subtitleSchema, type SubtitleFormInput } from "@/api";
 
 type SubtitleFormProps = {
-  onSubmit: (data: SubtitleFormData) => void;
+  onSubmit: (data: SubtitleFormInput) => void;
 };
 
 export function SubtitleForm({ onSubmit }: SubtitleFormProps) {
-  const form = useForm<SubtitleFormData>({
+  const form = useForm<SubtitleFormInput>({
     resolver: zodResolver(subtitleSchema),
+    defaultValues: {
+      has_subtitle: true,
+    },
   });
 
-  const handleSubmit = (data: SubtitleFormData) => {
+  const hasSubtitle = form.watch("has_subtitle");
+
+  const handleSubmit = (data: SubtitleFormInput) => {
     onSubmit(data);
-    form.reset();
+    form.reset({
+      has_subtitle: true,
+    });
   };
 
   return (
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
-      <div className="grid grid-cols-3 gap-2">
-        <div className="space-y-1">
-          <Label htmlFor="subtitle-index" className="text-xs">
-            순서
-          </Label>
-          <Input
-            id="subtitle-index"
-            type="number"
-            {...form.register("index", {
-              valueAsNumber: true,
-            })}
-            placeholder="0"
-          />
-        </div>
+      <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
           <Label htmlFor="subtitle-start" className="text-xs">
             시작 (초)
@@ -66,36 +61,56 @@ export function SubtitleForm({ onSubmit }: SubtitleFormProps) {
           />
         </div>
       </div>
-      <div className="space-y-1">
-        <Label htmlFor="subtitle-origin" className="text-xs">
-          원본 텍스트 *
+      <div className="flex items-center justify-between space-x-2 py-2">
+        <Label htmlFor="has-subtitle" className="text-xs">
+          자막 여부
         </Label>
-        <Input
-          id="subtitle-origin"
-          {...form.register("origin_text")}
-          placeholder="원본 텍스트를 입력하세요"
+        <Controller
+          name="has_subtitle"
+          control={form.control}
+          render={({ field }) => (
+            <Switch
+              id="has-subtitle"
+              checked={field.value}
+              onCheckedChange={field.onChange}
+            />
+          )}
         />
       </div>
-      <div className="space-y-1">
-        <Label htmlFor="subtitle-blanked" className="text-xs">
-          빈칸 처리된 텍스트 *
-        </Label>
-        <Input
-          id="subtitle-blanked"
-          {...form.register("blanked_text")}
-          placeholder="빈칸 처리된 텍스트를 입력하세요"
-        />
-      </div>
-      <div className="space-y-1">
-        <Label htmlFor="subtitle-translation" className="text-xs">
-          번역 *
-        </Label>
-        <Input
-          id="subtitle-translation"
-          {...form.register("translation")}
-          placeholder="번역을 입력하세요"
-        />
-      </div>
+      {hasSubtitle && (
+        <>
+          <div className="space-y-1">
+            <Label htmlFor="subtitle-origin" className="text-xs">
+              원본 텍스트 *
+            </Label>
+            <Input
+              id="subtitle-origin"
+              {...form.register("origin_text")}
+              placeholder="원본 텍스트를 입력하세요"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="subtitle-blanked" className="text-xs">
+              빈칸 처리된 텍스트 *
+            </Label>
+            <Input
+              id="subtitle-blanked"
+              {...form.register("blanked_text")}
+              placeholder="빈칸 처리된 텍스트를 입력하세요"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="subtitle-translation" className="text-xs">
+              번역 *
+            </Label>
+            <Input
+              id="subtitle-translation"
+              {...form.register("translation")}
+              placeholder="번역을 입력하세요"
+            />
+          </div>
+        </>
+      )}
       {Object.keys(form.formState.errors).length > 0 && (
         <div className="text-xs text-red-600">
           {Object.values(form.formState.errors).map(
@@ -110,4 +125,3 @@ export function SubtitleForm({ onSubmit }: SubtitleFormProps) {
     </form>
   );
 }
-

@@ -1,40 +1,31 @@
 "use client";
 
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import { PendingSubtitlesList } from "../../_components/PendingSubtitlesList";
+import { SavedSubtitlesList } from "../../_components/SavedSubtitlesList";
+import { SubtitleForm } from "../../_components/SubtitleForm";
+import { YouTubePlayer } from "../../_components/YouTubePlayer";
+import {
+  createSubtitlesMutation,
+  queryKeys,
+  useSubtitlesQuery,
+  useVideosQuery,
+} from "@/api";
 import type {
   SubtitleFormData,
   SubtitleFormInput,
-  Video,
   YouTubePlayer as YouTubePlayerType,
 } from "@/api";
-import { createSubtitlesMutation, queryKeys, useSubtitlesQuery } from "@/api";
-import { Button } from "@/components/ui/button";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { PendingSubtitlesList } from "./PendingSubtitlesList";
-import { SavedSubtitlesList } from "./SavedSubtitlesList";
-import { SubtitleForm } from "./SubtitleForm";
-import { YouTubePlayer } from "./YouTubePlayer";
 
-type SubtitleManagementDrawerProps = {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  video: Video | null;
-};
+export default function SubtitleManagementPage() {
+  const params = useParams();
+  const router = useRouter();
+  const videoId = params.id as string;
 
-export function SubtitleManagementDrawer({
-  isOpen,
-  onOpenChange,
-  video,
-}: SubtitleManagementDrawerProps) {
   const [youtubePlayer, setYoutubePlayer] = useState<YouTubePlayerType | null>(
     null
   );
@@ -43,17 +34,20 @@ export function SubtitleManagementDrawer({
   );
   const queryClient = useQueryClient();
 
+  const { data: videos } = useVideosQuery();
+  const video = videos?.find((v) => v.id === videoId);
+
   const { data: subtitles, isLoading: isSubtitlesLoading } = useSubtitlesQuery(
-    video?.id,
-    isOpen
+    videoId,
+    true
   );
 
   const subtitleMutation = useMutation({
     mutationFn: (subtitles: SubtitleFormData[]) =>
-      createSubtitlesMutation(video!.id, subtitles),
+      createSubtitlesMutation(videoId, subtitles),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.subtitles.byVideo(video!.id),
+        queryKey: queryKeys.subtitles.byVideo(videoId),
       });
       setPendingSubtitles([]);
     },
@@ -110,21 +104,29 @@ export function SubtitleManagementDrawer({
   };
 
   if (!video) {
-    return null;
+    return (
+      <div className="flex min-h-full items-center justify-center bg-gray-50 p-8">
+        <div className="text-lg text-gray-600">비디오를 찾을 수 없습니다.</div>
+      </div>
+    );
   }
 
   return (
-    <Drawer open={isOpen} onOpenChange={onOpenChange}>
-      <DrawerHeader className="shrink-0">
-        <DrawerTitle>{video.title}</DrawerTitle>
-        <DrawerDescription>
-          자막을 클릭하면 해당 시간으로 영상이 이동합니다.
-        </DrawerDescription>
-      </DrawerHeader>
-      <DrawerContent className="max-h-[90vh]">
-        <div className="flex h-full max-h-[85vh]">
+    <div className="bg-gray-50 p-6">
+      <div className="mx-auto max-w-[1600px]">
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/videos")}
+          className="mb-4"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {video.title}
+        </Button>
+
+        {/* 메인 컨텐츠 */}
+        <div className="flex gap-6 h-[calc(100vh-200px)]">
           {/* 왼쪽: 자막 추가 폼 및 임시 자막 */}
-          <div className="w-1/2 border-r p-6 flex flex-col overflow-hidden">
+          <div className="w-1/2 bg-white rounded-lg border border-gray-200 p-4 flex flex-col overflow-hidden">
             <div className="mb-4 shrink-0">
               <h3 className="text-lg font-semibold mb-4">자막 추가</h3>
               <SubtitleForm onSubmit={handleAddToPendingList} />
@@ -140,15 +142,15 @@ export function SubtitleManagementDrawer({
           </div>
 
           {/* 오른쪽: YouTube 플레이어 및 저장된 자막 */}
-          <div className="w-1/2 flex flex-col p-6 overflow-hidden">
-            <div className="mt-4 shrink-0">
+          <div className="w-1/2 bg-white rounded-lg border border-gray-200 flex flex-col overflow-hidden">
+            <div className="shrink-0">
               <YouTubePlayer
                 videoId={video.id}
                 onPlayerReady={setYoutubePlayer}
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto border-t pt-4 mt-4">
+            <div className="flex-1 overflow-y-auto border-t p-4">
               <h3 className="text-lg font-semibold mb-4">저장된 자막</h3>
               <SavedSubtitlesList
                 subtitles={subtitles}
@@ -158,12 +160,7 @@ export function SubtitleManagementDrawer({
             </div>
           </div>
         </div>
-        <DrawerFooter>
-          <DrawerClose asChild>
-            <Button variant="outline">닫기</Button>
-          </DrawerClose>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+      </div>
+    </div>
   );
 }
