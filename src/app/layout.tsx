@@ -3,8 +3,7 @@ import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
 
 export const metadata: Metadata = {
-  title: "관리자 대시보드",
-  description: "Shortglish 관리자 대시보드",
+  title: "숏글리시 - 어드민",
 };
 
 export default function RootLayout({

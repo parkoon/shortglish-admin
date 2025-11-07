@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import type { Video } from "@/api";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -10,10 +10,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Subtitles, Edit } from "lucide-react";
+import Image from "next/image";
 import { StatusBadge } from "./StatusBadge";
 import { formatDuration } from "./utils";
-import type { Video } from "@/api";
 
 type VideoListTableProps = {
   videos: Video[];
@@ -42,9 +41,7 @@ export function VideoListTable({
             <TableHead className="w-[100px] font-semibold text-gray-700">
               재생시간
             </TableHead>
-            <TableHead className="w-[200px] font-semibold text-gray-700">
-              액션
-            </TableHead>
+            <TableHead className="w-[200px] font-semibold text-gray-700" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -84,7 +81,6 @@ export function VideoListTable({
                       size="sm"
                       onClick={() => onEdit(video)}
                     >
-                      <Edit className="mr-1 h-3 w-3" />
                       수정
                     </Button>
                     <Button
@@ -92,7 +88,6 @@ export function VideoListTable({
                       size="sm"
                       onClick={() => onSubtitleManage(video)}
                     >
-                      <Subtitles className="mr-1 h-3 w-3" />
                       자막 관리
                     </Button>
                   </div>

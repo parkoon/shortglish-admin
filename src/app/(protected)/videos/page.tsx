@@ -88,7 +88,7 @@ export default function VideosPage() {
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">영상 목록</h1>
             <p className="mt-1 text-sm text-gray-600">
-              총 {videos?.length || 0}개의 영상가 있습니다이
+              총 {videos?.length || 0}개의 영상이 있습니다
             </p>
           </div>
           <VideoAddDialog

@@ -15,7 +15,6 @@ import {
 import {
   Drawer,
   DrawerContent,
-  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
@@ -45,6 +44,11 @@ export function SubtitleManagementDrawer({
     video?.id,
     isOpen
   );
+
+  const calculateNextIndex = (): number => {
+    if (!subtitles || subtitles.length === 0) return 0;
+    return Math.max(...subtitles.map((s) => s.index)) + 1;
+  };
 
   const createSubtitleMutationHook = useMutation({
     mutationFn: (subtitle: SubtitleFormData) =>
@@ -79,23 +83,13 @@ export function SubtitleManagementDrawer({
   });
 
   const handleAddSubtitle = (data: Partial<SubtitleFormData>) => {
-    // 저장된 자막의 최대 index 계산
-    const maxSavedIndex =
-      subtitles && subtitles.length > 0
-        ? Math.max(...subtitles.map((s) => s.index))
-        : -1;
-
-    // 다음 index는 저장된 자막의 최대 index + 1
-    const nextIndex = maxSavedIndex + 1;
-
-    // DB에 저장할 데이터 생성
     const subtitleWithIndex: SubtitleFormData = {
       start_time: data.start_time || 0,
       end_time: data.end_time || 0,
       origin_text: data.origin_text || "",
       blanked_text: data.blanked_text || "",
       translation: data.translation || "",
-      index: nextIndex,
+      index: calculateNextIndex(),
     };
 
     createSubtitleMutationHook.mutate(subtitleWithIndex);
@@ -114,47 +108,37 @@ export function SubtitleManagementDrawer({
     }
   };
 
-  // 기존 interval 정리
+  const clearPlaybackInterval = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
   useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
+    return clearPlaybackInterval;
   }, []);
 
   const handleSubtitleClick = (startTime: number, endTime: number) => {
     if (!youtubePlayer) return;
 
-    // 기존 interval 정리
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    clearPlaybackInterval();
 
-    // 시작 시간으로 이동하고 재생 시작
     youtubePlayer.seekTo(startTime, true);
     youtubePlayer.playVideo();
 
-    // 끝 시간에 도달하면 일시정지하는 인터벌 설정
     intervalRef.current = setInterval(() => {
       if (!youtubePlayer) {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
+        clearPlaybackInterval();
         return;
       }
 
       const currentTime = youtubePlayer.getCurrentTime();
       if (currentTime >= endTime) {
         youtubePlayer.pauseVideo();
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
+        clearPlaybackInterval();
       }
-    }, 100); // 100ms마다 체크
+    }, 100);
   };
 
   if (!video) {
