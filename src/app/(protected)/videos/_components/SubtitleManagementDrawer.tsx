@@ -12,13 +12,10 @@ import {
   queryKeys,
   useSubtitlesQuery,
 } from "@/api";
-import { Button } from "@/components/ui/button";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
-  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
@@ -165,52 +162,43 @@ export function SubtitleManagementDrawer({
   }
 
   return (
-    <Drawer open={isOpen} onOpenChange={onOpenChange}>
+    <Drawer open={isOpen} onOpenChange={onOpenChange} direction="right">
       <DrawerHeader className="shrink-0">
         <DrawerTitle>{video.title}</DrawerTitle>
         <DrawerDescription>
           자막을 클릭하면 해당 시간으로 영상이 이동합니다.
         </DrawerDescription>
       </DrawerHeader>
-      <DrawerContent className="max-h-[90vh]">
-        <div className="flex h-full max-h-[85vh]">
+      <DrawerContent className="max-h-screen w-full">
+        <div className="flex flex-col h-full">
           {/* YouTube 플레이어 */}
-          <div className="w-1/2 flex flex-col p-6 overflow-hidden">
-            <div className="mt-4 shrink-0">
-              <YouTubePlayer
-                videoId={video.id}
-                onPlayerReady={setYoutubePlayer}
-              />
-            </div>
+          <div className="shrink-0 border-b">
+            <YouTubePlayer
+              videoId={video.id}
+              onPlayerReady={setYoutubePlayer}
+            />
           </div>
 
           {/* 저장된 자막 */}
-          <div className="w-1/2 border-r flex flex-col p-6 overflow-hidden">
-            <div className="flex-1 overflow-y-auto">
-              <SavedSubtitlesList
-                subtitles={subtitles}
-                isLoading={isSubtitlesLoading}
-                onSubtitleClick={handleSubtitleClick}
-                onAddSubtitle={handleAddSubtitle}
-                onUpdateSubtitle={handleUpdateSubtitle}
-                onDeleteSubtitle={handleDeleteSubtitle}
-                isUpdating={updateSubtitleMutationHook.isPending}
-                isDeleting={deleteSubtitleMutationHook.isPending}
-                isCreating={createSubtitleMutationHook.isPending}
-                error={
-                  createSubtitleMutationHook.error ||
-                  updateSubtitleMutationHook.error ||
-                  deleteSubtitleMutationHook.error
-                }
-              />
-            </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <SavedSubtitlesList
+              subtitles={subtitles}
+              isLoading={isSubtitlesLoading}
+              onSubtitleClick={handleSubtitleClick}
+              onAddSubtitle={handleAddSubtitle}
+              onUpdateSubtitle={handleUpdateSubtitle}
+              onDeleteSubtitle={handleDeleteSubtitle}
+              isUpdating={updateSubtitleMutationHook.isPending}
+              isDeleting={deleteSubtitleMutationHook.isPending}
+              isCreating={createSubtitleMutationHook.isPending}
+              error={
+                createSubtitleMutationHook.error ||
+                updateSubtitleMutationHook.error ||
+                deleteSubtitleMutationHook.error
+              }
+            />
           </div>
         </div>
-        <DrawerFooter>
-          <DrawerClose asChild>
-            <Button variant="outline">닫기</Button>
-          </DrawerClose>
-        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );

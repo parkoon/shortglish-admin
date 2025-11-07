@@ -81,7 +81,7 @@ export function VideoListTable({
                     size="sm"
                     onClick={() => onSubtitleManage(video)}
                   >
-                    <Subtitles className="mr-1 h-3 w-3" />
+                    <Subtitles className="h-3 w-3" />
                     자막 관리
                   </Button>
                 </TableCell>
@@ -99,4 +99,3 @@ export function VideoListTable({
     </div>
   );
 }
-

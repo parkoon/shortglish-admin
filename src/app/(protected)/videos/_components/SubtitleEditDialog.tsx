@@ -58,7 +58,22 @@ export function SubtitleEditDialog({
   const hasSubtitle = form.watch("has_subtitle");
 
   useEffect(() => {
+    if (!isOpen) {
+      // 다이얼로그가 닫힐 때 폼 초기화
+      form.reset({
+        start_time: 0,
+        end_time: 0,
+        has_subtitle: true,
+        origin_text: "",
+        blanked_text: "",
+        translation: "",
+      });
+      return;
+    }
+
+    // 다이얼로그가 열릴 때 폼 초기화 또는 데이터 로드
     if (subtitle) {
+      // 수정 모드: 기존 데이터 로드
       form.reset({
         start_time: subtitle.start_time,
         end_time: subtitle.end_time,
@@ -68,6 +83,7 @@ export function SubtitleEditDialog({
         translation: subtitle.translation,
       });
     } else {
+      // 추가 모드: 빈 폼으로 초기화
       form.reset({
         start_time: 0,
         end_time: 0,
@@ -77,7 +93,7 @@ export function SubtitleEditDialog({
         translation: "",
       });
     }
-  }, [subtitle, form]);
+  }, [isOpen, subtitle, form]);
 
   const handleSubmit = (data: SubtitleFormInput) => {
     if (!data.has_subtitle) {

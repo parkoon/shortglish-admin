@@ -80,7 +80,7 @@ export function SavedSubtitlesList({
           onClick={handleAddClick}
           disabled={isCreating || isUpdating || isDeleting}
         >
-          <Plus className="h-4 w-4 mr-1" />
+          <Plus className="h-4 w-4" />
           자막 추가
         </Button>
       </div>
