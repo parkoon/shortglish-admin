@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { subtitleSchema, type SubtitleFormInput } from "@/api";
+import { subtitleFormInputSchema, type SubtitleFormInput } from "@/api";
 
 type SubtitleFormProps = {
   onSubmit: (data: SubtitleFormInput) => void;
@@ -14,7 +14,7 @@ type SubtitleFormProps = {
 
 export function SubtitleForm({ onSubmit }: SubtitleFormProps) {
   const form = useForm<SubtitleFormInput>({
-    resolver: zodResolver(subtitleSchema),
+    resolver: zodResolver(subtitleFormInputSchema),
     defaultValues: {
       has_subtitle: true,
     },
@@ -120,7 +120,7 @@ export function SubtitleForm({ onSubmit }: SubtitleFormProps) {
         </div>
       )}
       <Button type="submit" size="sm" variant="outline" className="w-full">
-        목록에 추가
+        자막 추가
       </Button>
     </form>
   );

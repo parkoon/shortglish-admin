@@ -5,19 +5,18 @@ import { useState, useRef, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { PendingSubtitlesList } from "../../_components/PendingSubtitlesList";
 import { SavedSubtitlesList } from "../../_components/SavedSubtitlesList";
-import { SubtitleForm } from "../../_components/SubtitleForm";
 import { YouTubePlayer } from "../../_components/YouTubePlayer";
 import {
-  createSubtitlesMutation,
+  createSubtitleMutation,
+  updateSubtitleMutation,
+  deleteSubtitleMutation,
   queryKeys,
   useSubtitlesQuery,
   useVideosQuery,
 } from "@/api";
 import type {
   SubtitleFormData,
-  SubtitleFormInput,
   YouTubePlayer as YouTubePlayerType,
 } from "@/api";
 
@@ -28,9 +27,6 @@ export default function SubtitleManagementPage() {
 
   const [youtubePlayer, setYoutubePlayer] = useState<YouTubePlayerType | null>(
     null
-  );
-  const [pendingSubtitles, setPendingSubtitles] = useState<SubtitleFormData[]>(
-    []
   );
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
@@ -43,58 +39,72 @@ export default function SubtitleManagementPage() {
     true
   );
 
-  const subtitleMutation = useMutation({
-    mutationFn: (subtitles: SubtitleFormData[]) =>
-      createSubtitlesMutation(videoId, subtitles),
+  const createSubtitleMutationHook = useMutation({
+    mutationFn: (subtitle: SubtitleFormData) =>
+      createSubtitleMutation(videoId, subtitle),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.subtitles.byVideo(videoId),
       });
-      setPendingSubtitles([]);
     },
   });
 
-  const handleAddToPendingList = (data: SubtitleFormInput) => {
+  const updateSubtitleMutationHook = useMutation({
+    mutationFn: ({
+      id,
+      ...subtitle
+    }: { id: number } & Partial<SubtitleFormData>) =>
+      updateSubtitleMutation(id, subtitle),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.subtitles.byVideo(videoId),
+      });
+    },
+  });
+
+  const deleteSubtitleMutationHook = useMutation({
+    mutationFn: (subtitleId: number) => deleteSubtitleMutation(subtitleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.subtitles.byVideo(videoId),
+      });
+    },
+  });
+
+  const handleAddSubtitle = (data: Partial<SubtitleFormData>) => {
     // 저장된 자막의 최대 index 계산
     const maxSavedIndex =
       subtitles && subtitles.length > 0
         ? Math.max(...subtitles.map((s) => s.index))
         : -1;
 
-    // 다음 index는 (저장된 자막의 최대 index + 1) + (현재 pending 자막의 개수)
-    const nextIndex = maxSavedIndex + 1 + pendingSubtitles.length;
+    // 다음 index는 저장된 자막의 최대 index + 1
+    const nextIndex = maxSavedIndex + 1;
 
+    // DB에 저장할 데이터 생성
     const subtitleWithIndex: SubtitleFormData = {
-      ...data,
+      start_time: data.start_time || 0,
+      end_time: data.end_time || 0,
+      origin_text: data.origin_text || "",
+      blanked_text: data.blanked_text || "",
+      translation: data.translation || "",
       index: nextIndex,
-      origin_text: data.has_subtitle ? data.origin_text || "" : "",
-      blanked_text: data.has_subtitle ? data.blanked_text || "" : "",
-      translation: data.has_subtitle ? data.translation || "" : "",
     };
 
-    setPendingSubtitles((prev) => [...prev, subtitleWithIndex]);
+    createSubtitleMutationHook.mutate(subtitleWithIndex);
   };
 
-  const handleRemovePendingSubtitle = (index: number) => {
-    setPendingSubtitles((prev) => {
-      const filtered = prev.filter((_, i) => i !== index);
-      // index 재계산
-      const maxSavedIndex =
-        subtitles && subtitles.length > 0
-          ? Math.max(...subtitles.map((s) => s.index))
-          : -1;
-      return filtered.map((subtitle, idx) => ({
-        ...subtitle,
-        index: maxSavedIndex + 1 + idx,
-      }));
-    });
+  const handleUpdateSubtitle = (
+    subtitleId: number,
+    subtitle: Partial<SubtitleFormData>
+  ) => {
+    updateSubtitleMutationHook.mutate({ id: subtitleId, ...subtitle });
   };
 
-  const handleSaveSubtitles = () => {
-    if (pendingSubtitles.length === 0) {
-      return;
+  const handleDeleteSubtitle = (subtitleId: number) => {
+    if (confirm("정말 이 자막을 삭제하시겠습니까?")) {
+      deleteSubtitleMutationHook.mutate(subtitleId);
     }
-    subtitleMutation.mutate(pendingSubtitles);
   };
 
   // 기존 interval 정리
@@ -162,23 +172,7 @@ export default function SubtitleManagementPage() {
 
         {/* 메인 컨텐츠 */}
         <div className="flex gap-6 h-[calc(100vh-200px)]">
-          {/* 왼쪽: 자막 추가 폼 및 임시 자막 */}
-          <div className="w-1/2 bg-white rounded-lg border border-gray-200 p-4 flex flex-col overflow-hidden">
-            <div className="mb-4 shrink-0">
-              <h3 className="text-lg font-semibold mb-4">자막 추가</h3>
-              <SubtitleForm onSubmit={handleAddToPendingList} />
-            </div>
-
-            <PendingSubtitlesList
-              pendingSubtitles={pendingSubtitles}
-              onRemove={handleRemovePendingSubtitle}
-              onSave={handleSaveSubtitles}
-              isSaving={subtitleMutation.isPending}
-              error={subtitleMutation.error as Error | null}
-            />
-          </div>
-
-          {/* 오른쪽: YouTube 플레이어 및 저장된 자막 */}
+          {/* YouTube 플레이어 */}
           <div className="w-1/2 bg-white rounded-lg border border-gray-200 flex flex-col overflow-hidden">
             <div className="shrink-0">
               <YouTubePlayer
@@ -186,13 +180,26 @@ export default function SubtitleManagementPage() {
                 onPlayerReady={setYoutubePlayer}
               />
             </div>
+          </div>
 
-            <div className="flex-1 overflow-y-auto border-t p-4">
-              <h3 className="text-lg font-semibold mb-4">저장된 자막</h3>
+          {/* 저장된 자막 */}
+          <div className="w-1/2 bg-white rounded-lg border border-gray-200 flex flex-col overflow-hidden p-4">
+            <div className="flex-1 overflow-y-auto">
               <SavedSubtitlesList
                 subtitles={subtitles}
                 isLoading={isSubtitlesLoading}
                 onSubtitleClick={handleSubtitleClick}
+                onAddSubtitle={handleAddSubtitle}
+                onUpdateSubtitle={handleUpdateSubtitle}
+                onDeleteSubtitle={handleDeleteSubtitle}
+                isUpdating={updateSubtitleMutationHook.isPending}
+                isDeleting={deleteSubtitleMutationHook.isPending}
+                isCreating={createSubtitleMutationHook.isPending}
+                error={
+                  createSubtitleMutationHook.error ||
+                  updateSubtitleMutationHook.error ||
+                  deleteSubtitleMutationHook.error
+                }
               />
             </div>
           </div>
