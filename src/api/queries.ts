@@ -5,7 +5,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { fetchVideos, fetchSubtitles } from "./endpoints";
+import { fetchVideos, fetchSubtitles, fetchCategories } from "./endpoints";
 import { queryKeys } from "./query-keys";
 
 // ============================================
@@ -37,5 +37,19 @@ export const useSubtitlesQuery = (
     queryKey: queryKeys.subtitles.byVideo(videoId!),
     queryFn: () => fetchSubtitles(videoId!),
     enabled: !!videoId && enabled,
+  });
+};
+
+// ============================================
+// Category Queries
+// ============================================
+
+/**
+ * 카테고리 목록 조회 hook (Admin용)
+ */
+export const useCategoriesQuery = () => {
+  return useQuery({
+    queryKey: queryKeys.categories.all,
+    queryFn: fetchCategories,
   });
 };

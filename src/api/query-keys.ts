@@ -12,4 +12,7 @@ export const queryKeys = {
   subtitles: {
     byVideo: (videoId: string) => ["subtitles", videoId] as const,
   },
+  categories: {
+    all: ["categories"] as const,
+  },
 };

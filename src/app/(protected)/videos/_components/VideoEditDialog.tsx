@@ -21,8 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { videoSchema, type VideoFormData } from "@/api";
+import Link from "next/link";
+import { videoFormSchema, type VideoFormData, useCategoriesQuery } from "@/api";
 import type { Video } from "@/api";
+import type { z } from "zod";
 
 type VideoEditDialogProps = {
   isOpen: boolean;
@@ -32,6 +34,7 @@ type VideoEditDialogProps = {
   isPending: boolean;
   error: Error | null;
 };
+type FormData = z.infer<typeof videoFormSchema>;
 
 export function VideoEditDialog({
   isOpen,
@@ -41,8 +44,11 @@ export function VideoEditDialog({
   isPending,
   error,
 }: VideoEditDialogProps) {
-  const form = useForm<VideoFormData>({
-    resolver: zodResolver(videoSchema),
+  const { data: categories, isLoading: categoriesLoading } =
+    useCategoriesQuery();
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(videoFormSchema),
     defaultValues: {
       status: "draft",
     },
@@ -64,14 +70,26 @@ export function VideoEditDialog({
         description: video.description || "",
         duration: video.duration,
         status: video.status,
+        category_id: video.category_id,
+        difficulty: video.difficulty,
       });
     }
   }, [isOpen, video, form]);
 
-  const handleSubmit = async (data: VideoFormData) => {
+  const hasCategories = categories && categories.length > 0;
+
+  const handleSubmit = async (data: FormData) => {
     if (!video) return;
-    
-    const { id, ...updateData } = data; // id는 제외하고 업데이트
+
+    // refine 검증을 통과했으므로 category_id는 항상 number
+    const validatedData: VideoFormData = {
+      ...data,
+      category_id: data.category_id as number,
+    };
+
+    // id는 제외하고 업데이트
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...updateData } = validatedData;
     onSubmit(video.id, updateData);
   };
 
@@ -84,11 +102,59 @@ export function VideoEditDialog({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>영상 수정</DialogTitle>
-          <DialogDescription>
-            영상 정보를 수정하세요.
-          </DialogDescription>
+          <DialogDescription>영상 정보를 수정하세요.</DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          {/* 카테고리 필드 - 최상단 */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-category_id">카테고리 *</Label>
+            {categoriesLoading ? (
+              <div className="text-sm text-gray-500">로딩 중...</div>
+            ) : !hasCategories ? (
+              <div className="rounded-md bg-yellow-50 p-3 text-sm text-yellow-800">
+                카테고리가 없습니다.{" "}
+                <Link
+                  href="/categories"
+                  className="font-semibold underline hover:text-yellow-900"
+                  onClick={() => onOpenChange(false)}
+                >
+                  먼저 카테고리를 등록해주세요
+                </Link>
+                .
+              </div>
+            ) : (
+              <Controller
+                name="category_id"
+                control={form.control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={(value) => field.onChange(Number(value))}
+                    value={field.value?.toString()}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="카테고리를 선택하세요" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem
+                          key={category.id}
+                          value={category.id.toString()}
+                        >
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            )}
+            {form.formState.errors.category_id && (
+              <p className="text-sm text-red-600">
+                {form.formState.errors.category_id.message}
+              </p>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-id">영상 ID</Label>
@@ -98,7 +164,9 @@ export function VideoEditDialog({
                 disabled
                 className="bg-gray-50"
               />
-              <p className="text-xs text-gray-500">영상 ID는 수정할 수 없습니다.</p>
+              <p className="text-xs text-gray-500">
+                영상 ID는 수정할 수 없습니다.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-duration">재생시간 (초) *</Label>
@@ -151,26 +219,57 @@ export function VideoEditDialog({
               placeholder="영상 설명 (선택사항)"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="edit-status">상태</Label>
-            <Controller
-              name="status"
-              control={form.control}
-              render={({ field }) => (
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="상태를 선택하세요" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                  </SelectContent>
-                </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-status">상태</Label>
+              <Controller
+                name="status"
+                control={form.control}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="상태를 선택하세요" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-difficulty">난이도</Label>
+              <Controller
+                name="difficulty"
+                control={form.control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={(value) =>
+                      field.onChange(value === "none" ? null : Number(value))
+                    }
+                    value={field.value?.toString() || "none"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="난이도를 선택하세요" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">선택 안함</SelectItem>
+                      <SelectItem value="1">1단계 (초급)</SelectItem>
+                      <SelectItem value="2">2단계 (초중급)</SelectItem>
+                      <SelectItem value="3">3단계 (중급)</SelectItem>
+                      <SelectItem value="4">4단계 (중고급)</SelectItem>
+                      <SelectItem value="5">5단계 (고급)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {form.formState.errors.difficulty && (
+                <p className="text-sm text-red-600">
+                  {form.formState.errors.difficulty.message}
+                </p>
               )}
-            />
+            </div>
           </div>
           {error && (
             <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">
@@ -185,7 +284,7 @@ export function VideoEditDialog({
             >
               취소
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending || !hasCategories}>
               {isPending ? "수정 중..." : "수정"}
             </Button>
           </DialogFooter>
@@ -194,4 +293,3 @@ export function VideoEditDialog({
     </Dialog>
   );
 }
-

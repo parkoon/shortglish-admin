@@ -4,7 +4,14 @@
  */
 
 import { supabase } from "@/lib/supabase";
-import type { Video, Subtitle, VideoFormData, SubtitleFormData } from "./types";
+import type {
+  Video,
+  Subtitle,
+  VideoFormData,
+  SubtitleFormData,
+  Category,
+  CategoryFormData,
+} from "./types";
 
 // ============================================
 // Video API
@@ -14,16 +21,44 @@ import type { Video, Subtitle, VideoFormData, SubtitleFormData } from "./types";
  * 영상 목록 조회 (Admin용 - 모든 상태 포함)
  */
 export const fetchVideos = async (): Promise<Video[]> => {
-  const { data, error } = await supabase
+  const { data: videos, error: videosError } = await supabase
     .from("video_dev")
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) {
-    throw new Error(`Failed to fetch videos: ${error.message}`);
+  if (videosError) {
+    throw new Error(`Failed to fetch videos: ${videosError.message}`);
   }
 
-  return data || [];
+  if (!videos || videos.length === 0) {
+    return [];
+  }
+
+  // 카테고리 정보 조회
+  const categoryIds = [...new Set(videos.map((v) => v.category_id).filter(Boolean))];
+  
+  if (categoryIds.length === 0) {
+    return videos.map((v) => ({ ...v, category: null }));
+  }
+
+  const { data: categories, error: categoriesError } = await supabase
+    .from("video_category")
+    .select("*")
+    .in("id", categoryIds);
+
+  if (categoriesError) {
+    // 카테고리 조회 실패해도 비디오는 반환
+    return videos.map((v) => ({ ...v, category: null }));
+  }
+
+  const categoryMap = new Map(
+    (categories || []).map((cat) => [cat.id, cat])
+  );
+
+  return videos.map((v) => ({
+    ...v,
+    category: v.category_id ? categoryMap.get(v.category_id) || null : null,
+  }));
 };
 
 /**
@@ -62,6 +97,81 @@ export const updateVideo = async (
   }
 
   return data;
+};
+
+// ============================================
+// Category API
+// ============================================
+
+/**
+ * 카테고리 목록 조회 (Admin용)
+ */
+export const fetchCategories = async (): Promise<Category[]> => {
+  const { data, error } = await supabase
+    .from("video_category")
+    .select("*")
+    .order("order", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to fetch categories: ${error.message}`);
+  }
+
+  return data || [];
+};
+
+/**
+ * 카테고리 생성 (Admin용)
+ */
+export const createCategory = async (
+  category: CategoryFormData
+): Promise<Category> => {
+  const { data, error } = await supabase
+    .from("video_category")
+    .insert([category])
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create category: ${error.message}`);
+  }
+
+  return data;
+};
+
+/**
+ * 카테고리 수정 (Admin용)
+ */
+export const updateCategory = async (
+  categoryId: number,
+  category: Partial<CategoryFormData>
+): Promise<Category> => {
+  const { data, error } = await supabase
+    .from("video_category")
+    .update(category)
+    .eq("id", categoryId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update category: ${error.message}`);
+  }
+
+  return data;
+};
+
+/**
+ * 카테고리 삭제 (Admin용)
+ */
+export const deleteCategory = async (categoryId: number): Promise<void> => {
+  const { error } = await supabase
+    .from("video_category")
+    .delete()
+    .eq("id", categoryId);
+
+  if (error) {
+    throw new Error(`Failed to delete category: ${error.message}`);
+  }
 };
 
 // ============================================

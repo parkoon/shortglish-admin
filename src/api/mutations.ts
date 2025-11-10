@@ -11,9 +11,16 @@ import {
   createSubtitle,
   updateSubtitle,
   deleteSubtitle,
+  createCategory,
+  updateCategory,
+  deleteCategory,
 } from "./endpoints";
-import type { VideoFormData, SubtitleFormData } from "./types";
-import type { Video, Subtitle } from "./types";
+import type {
+  VideoFormData,
+  SubtitleFormData,
+  CategoryFormData,
+} from "./types";
+import type { Video, Subtitle, Category } from "./types";
 
 // ============================================
 // Video Mutations
@@ -79,4 +86,36 @@ export const createSubtitlesMutation = async (
   subtitles: SubtitleFormData[]
 ): Promise<Subtitle[]> => {
   return createSubtitles(videoId, subtitles);
+};
+
+// ============================================
+// Category Mutations
+// ============================================
+
+/**
+ * 카테고리 생성 mutation 함수
+ */
+export const createCategoryMutation = async (
+  category: CategoryFormData
+): Promise<Category> => {
+  return createCategory(category);
+};
+
+/**
+ * 카테고리 수정 mutation 함수
+ */
+export const updateCategoryMutation = async (
+  categoryId: number,
+  category: Partial<CategoryFormData>
+): Promise<Category> => {
+  return updateCategory(categoryId, category);
+};
+
+/**
+ * 카테고리 삭제 mutation 함수
+ */
+export const deleteCategoryMutation = async (
+  categoryId: number
+): Promise<void> => {
+  return deleteCategory(categoryId);
 };

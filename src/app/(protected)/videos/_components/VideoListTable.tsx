@@ -33,6 +33,9 @@ export function VideoListTable({
             <TableHead className="w-[100px] font-semibold text-gray-700">
               상태
             </TableHead>
+            <TableHead className="font-semibold text-gray-700">
+              카테고리
+            </TableHead>
             <TableHead className="w-[100px] font-semibold text-gray-700">
               썸네일
             </TableHead>
@@ -40,6 +43,9 @@ export function VideoListTable({
             <TableHead className="font-semibold text-gray-700">설명</TableHead>
             <TableHead className="w-[100px] font-semibold text-gray-700">
               재생시간
+            </TableHead>
+            <TableHead className="w-[100px] font-semibold text-gray-700">
+              난이도
             </TableHead>
             <TableHead className="w-[200px] font-semibold text-gray-700" />
           </TableRow>
@@ -53,6 +59,9 @@ export function VideoListTable({
               >
                 <TableCell className="py-3">
                   <StatusBadge status={video.status} />
+                </TableCell>
+                <TableCell className="text-gray-600 py-3">
+                  {video.category?.name || "-"}
                 </TableCell>
                 <TableCell className="py-3">
                   <div className="relative h-16 w-28 overflow-hidden rounded">
@@ -73,6 +82,18 @@ export function VideoListTable({
                 </TableCell>
                 <TableCell className="text-gray-600 py-3">
                   {formatDuration(video.duration)}
+                </TableCell>
+                <TableCell className="py-3">
+                  {video.difficulty ? (
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-medium text-gray-700">
+                        {video.difficulty}
+                      </span>
+                      <span className="text-xs text-gray-500">단계</span>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-400">-</span>
+                  )}
                 </TableCell>
                 <TableCell className="py-3">
                   <div className="flex items-center gap-2">
@@ -96,7 +117,7 @@ export function VideoListTable({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-gray-500">
+              <TableCell colSpan={8} className="text-center text-gray-500">
                 영상이 없습니다.
               </TableCell>
             </TableRow>
