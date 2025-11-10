@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import type { Subtitle } from "@/api";
+import {
+  subtitleFormInputSchema,
+  type SubtitleFormData,
+  type SubtitleFormInput,
+} from "@/api";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -15,23 +15,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  subtitleFormInputSchema,
-  subtitleSchema,
-  type SubtitleFormData,
-  type SubtitleFormInput,
-} from "@/api";
-import type { Subtitle } from "@/api";
-import { z } from "zod";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { BlankedTextEditor } from "./BlankedTextEditor";
 
 type SubtitleDialogProps = {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   subtitle: Subtitle | null;
-  onSave: (
-    subtitleId: number | null,
-    data: Partial<SubtitleFormData>
-  ) => void;
+  onSave: (subtitleId: number | null, data: Partial<SubtitleFormData>) => void;
   isSaving: boolean;
 };
 
@@ -165,11 +161,19 @@ export function SubtitleEditDialog({
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="dialog-blanked">빈칸 처리된 텍스트 *</Label>
-                <Input
-                  id="dialog-blanked"
-                  {...form.register("blanked_text")}
-                  placeholder="빈칸 처리된 텍스트를 입력하세요"
+                <Label htmlFor="dialog-blanked">빈칸으로 처리할 텍스트 *</Label>
+                <Controller
+                  name="blanked_text"
+                  control={form.control}
+                  render={({ field }) => (
+                    <BlankedTextEditor
+                      originText={form.watch("origin_text") || ""}
+                      initialBlankedText={
+                        subtitle?.blanked_text || field.value || ""
+                      }
+                      onChange={field.onChange}
+                    />
+                  )}
                 />
               </div>
               <div className="space-y-1">
@@ -207,4 +211,3 @@ export function SubtitleEditDialog({
     </Dialog>
   );
 }
-

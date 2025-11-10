@@ -7,6 +7,60 @@ import type { Subtitle, SubtitleFormData } from "@/api";
 import { formatTime } from "./utils";
 import { SubtitleEditDialog } from "./SubtitleEditDialog";
 
+/**
+ * 빈칸 처리된 텍스트를 렌더링 (연한 배경으로 표시)
+ */
+function renderBlankedText(blankedText: string) {
+  if (!blankedText) return null;
+
+  // {word} 패턴을 찾아서 연한 배경으로 표시
+  const pattern = /\{([^}]+)\}/g;
+  const parts: Array<{ text: string; isBlanked: boolean }> = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = pattern.exec(blankedText)) !== null) {
+    // {word} 이전의 텍스트 추가
+    if (match.index > lastIndex) {
+      parts.push({
+        text: blankedText.slice(lastIndex, match.index),
+        isBlanked: false,
+      });
+    }
+
+    // {word} 패턴의 내용 추가 (연한 배경)
+    parts.push({
+      text: match[1],
+      isBlanked: true,
+    });
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // 남은 텍스트 추가
+  if (lastIndex < blankedText.length) {
+    parts.push({
+      text: blankedText.slice(lastIndex),
+      isBlanked: false,
+    });
+  }
+
+  return (
+    <span className="inline">
+      {parts.map((part, idx) => {
+        if (part.isBlanked) {
+          return (
+            <span key={idx} className="bg-blue-100 text-blue-700 px-1 rounded">
+              {part.text}
+            </span>
+          );
+        }
+        return <span key={idx}>{part.text}</span>;
+      })}
+    </span>
+  );
+}
+
 type SavedSubtitlesListProps = {
   subtitles: Subtitle[] | undefined;
   isLoading: boolean;
@@ -138,7 +192,9 @@ export function SavedSubtitlesList({
                 <p className="text-sm font-medium text-gray-900">
                   {subtitle.origin_text}
                 </p>
-                <p className="text-xs text-gray-600">{subtitle.blanked_text}</p>
+                <p className="text-xs text-gray-600">
+                  {renderBlankedText(subtitle.blanked_text)}
+                </p>
                 <p className="text-xs text-blue-600">{subtitle.translation}</p>
               </div>
             </div>
