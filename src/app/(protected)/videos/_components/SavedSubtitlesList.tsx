@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Plus } from "lucide-react";
-import type { Subtitle, SubtitleFormData } from "@/api";
+import { Edit, Trash2 } from "lucide-react";
+import type { Subtitle } from "@/api";
 import { formatTime } from "./utils";
-import { SubtitleEditDialog } from "./SubtitleEditDialog";
 
 /**
  * 빈칸 처리된 텍스트를 렌더링 (연한 배경으로 표시)
@@ -65,11 +63,7 @@ type SavedSubtitlesListProps = {
   subtitles: Subtitle[] | undefined;
   isLoading: boolean;
   onSubtitleClick: (startTime: number, endTime: number) => void;
-  onAddSubtitle: (data: Partial<SubtitleFormData>) => void;
-  onUpdateSubtitle: (
-    subtitleId: number,
-    subtitle: Partial<SubtitleFormData>
-  ) => void;
+  onEditSubtitle: (subtitle: Subtitle) => void;
   onDeleteSubtitle: (subtitleId: number) => void;
   isUpdating: boolean;
   isDeleting: boolean;
@@ -81,30 +75,20 @@ export function SavedSubtitlesList({
   subtitles,
   isLoading,
   onSubtitleClick,
-  onAddSubtitle,
-  onUpdateSubtitle,
+  onEditSubtitle,
   onDeleteSubtitle,
   isUpdating,
   isDeleting,
   isCreating,
   error,
 }: SavedSubtitlesListProps) {
-  const [editingSubtitle, setEditingSubtitle] = useState<Subtitle | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
   if (isLoading) {
     return <div className="text-sm text-gray-500">로딩 중...</div>;
   }
 
-  const handleAddClick = () => {
-    setEditingSubtitle(null);
-    setIsDialogOpen(true);
-  };
-
   const handleEditClick = (subtitle: Subtitle, e: React.MouseEvent) => {
     e.stopPropagation();
-    setEditingSubtitle(subtitle);
-    setIsDialogOpen(true);
+    onEditSubtitle(subtitle);
   };
 
   const handleDeleteClick = (subtitleId: number, e: React.MouseEvent) => {
@@ -112,32 +96,8 @@ export function SavedSubtitlesList({
     onDeleteSubtitle(subtitleId);
   };
 
-  const handleSave = (
-    subtitleId: number | null,
-    data: Partial<SubtitleFormData>
-  ) => {
-    if (subtitleId === null) {
-      // 추가 모드
-      onAddSubtitle(data);
-    } else {
-      // 수정 모드
-      onUpdateSubtitle(subtitleId, data);
-    }
-  };
-
   return (
     <>
-      <div className="mb-4 text-right">
-        <Button
-          size="sm"
-          onClick={handleAddClick}
-          disabled={isCreating || isUpdating || isDeleting}
-        >
-          <Plus className="h-4 w-4" />
-          자막 추가
-        </Button>
-      </div>
-
       {!subtitles || subtitles.length === 0 ? (
         <div className="text-sm text-gray-500">
           자막이 없습니다. 위 버튼에서 자막을 추가하세요.
@@ -207,14 +167,6 @@ export function SavedSubtitlesList({
           에러: {error.message}
         </div>
       )}
-
-      <SubtitleEditDialog
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        subtitle={editingSubtitle}
-        onSave={handleSave}
-        isSaving={isCreating || isUpdating}
-      />
     </>
   );
 }

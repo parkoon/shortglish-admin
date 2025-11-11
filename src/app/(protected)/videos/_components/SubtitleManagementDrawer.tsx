@@ -22,6 +22,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef, useEffect } from "react";
 import { SavedSubtitlesList } from "./SavedSubtitlesList";
 import { YouTubePlayer } from "./YouTubePlayer";
+import { Button } from "@/components/ui/button";
+import { Plus, XIcon } from "lucide-react";
+import { SubtitleEditDialog } from "./SubtitleEditDialog";
+import type { Subtitle } from "@/api";
 
 type SubtitleManagementDrawerProps = {
   isOpen: boolean;
@@ -37,6 +41,8 @@ export function SubtitleManagementDrawer({
   const [youtubePlayer, setYoutubePlayer] = useState<YouTubePlayerType | null>(
     null
   );
+  const [editingSubtitle, setEditingSubtitle] = useState<Subtitle | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
 
@@ -57,6 +63,8 @@ export function SubtitleManagementDrawer({
       queryClient.invalidateQueries({
         queryKey: queryKeys.subtitles.byVideo(video!.id),
       });
+      setIsDialogOpen(false);
+      setEditingSubtitle(null);
     },
   });
 
@@ -70,6 +78,8 @@ export function SubtitleManagementDrawer({
       queryClient.invalidateQueries({
         queryKey: queryKeys.subtitles.byVideo(video!.id),
       });
+      setIsDialogOpen(false);
+      setEditingSubtitle(null);
     },
   });
 
@@ -82,6 +92,11 @@ export function SubtitleManagementDrawer({
     },
   });
 
+  const handleAddClick = () => {
+    setEditingSubtitle(null);
+    setIsDialogOpen(true);
+  };
+
   const handleAddSubtitle = (data: Partial<SubtitleFormData>) => {
     const subtitleWithIndex: SubtitleFormData = {
       start_time: data.start_time || 0,
@@ -93,6 +108,23 @@ export function SubtitleManagementDrawer({
     };
 
     createSubtitleMutationHook.mutate(subtitleWithIndex);
+  };
+
+  const handleEditSubtitle = (subtitle: Subtitle) => {
+    setEditingSubtitle(subtitle);
+    setIsDialogOpen(true);
+  };
+
+  const handleSave = (
+    subtitleId: number | null,
+    data: Partial<SubtitleFormData>
+  ) => {
+    if (subtitleId === null) {
+      handleAddSubtitle(data);
+    } else {
+      handleUpdateSubtitle(subtitleId, data);
+    }
+    // 다이얼로그는 mutation의 onSuccess에서 닫힘
   };
 
   const handleUpdateSubtitle = (
@@ -146,8 +178,19 @@ export function SubtitleManagementDrawer({
   }
 
   return (
-    <Drawer open={isOpen} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent className="max-h-screen w-full">
+    <Drawer open={isOpen} onOpenChange={onOpenChange} dismissible={false}>
+      <DrawerContent className="w-full sm:w-[90%] md:w-[800px] lg:w-[1000px] h-screen max-h-screen! mx-auto">
+        <DrawerHeader className="flex justify-between">
+          <DrawerTitle>{video.title}</DrawerTitle>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => onOpenChange(false)}
+          >
+            <XIcon />
+          </Button>
+        </DrawerHeader>
         <div className="flex flex-col h-full">
           {/* YouTube 플레이어 */}
           <div className="shrink-0 border-b">
@@ -156,17 +199,31 @@ export function SubtitleManagementDrawer({
               onPlayerReady={setYoutubePlayer}
             />
           </div>
-          <DrawerHeader className="shrink-0">
-            <DrawerTitle>{video.title}</DrawerTitle>
-          </DrawerHeader>
-          {/* 저장된 자막 */}
+
+          {/* 자막 추가 버튼 - 고정 영역 */}
+          <div className="shrink-0 border-b px-4 py-3">
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={handleAddClick}
+                disabled={
+                  createSubtitleMutationHook.isPending ||
+                  updateSubtitleMutationHook.isPending ||
+                  deleteSubtitleMutationHook.isPending
+                }
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                자막 추가
+              </Button>
+            </div>
+          </div>
+          {/* 저장된 자막 - 스크롤 영역 */}
           <div className="flex-1 overflow-y-auto p-4">
             <SavedSubtitlesList
               subtitles={subtitles}
               isLoading={isSubtitlesLoading}
               onSubtitleClick={handleSubtitleClick}
-              onAddSubtitle={handleAddSubtitle}
-              onUpdateSubtitle={handleUpdateSubtitle}
+              onEditSubtitle={handleEditSubtitle}
               onDeleteSubtitle={handleDeleteSubtitle}
               isUpdating={updateSubtitleMutationHook.isPending}
               isDeleting={deleteSubtitleMutationHook.isPending}
@@ -178,6 +235,17 @@ export function SubtitleManagementDrawer({
               }
             />
           </div>
+          {/* 자막 편집 다이얼로그 */}
+          <SubtitleEditDialog
+            isOpen={isDialogOpen}
+            onOpenChange={setIsDialogOpen}
+            subtitle={editingSubtitle}
+            onSave={handleSave}
+            isSaving={
+              createSubtitleMutationHook.isPending ||
+              updateSubtitleMutationHook.isPending
+            }
+          />
         </div>
       </DrawerContent>
     </Drawer>
