@@ -4,6 +4,7 @@
  */
 
 import { supabase } from "@/lib/supabase";
+import { getTableName } from "@/lib/table-names";
 import type {
   Video,
   Subtitle,
@@ -22,7 +23,7 @@ import type {
  */
 export const fetchVideos = async (): Promise<Video[]> => {
   const { data: videos, error: videosError } = await supabase
-    .from("video_dev")
+    .from(getTableName("video"))
     .select("*")
     .order("created_at", { ascending: false });
 
@@ -42,7 +43,7 @@ export const fetchVideos = async (): Promise<Video[]> => {
   }
 
   const { data: categories, error: categoriesError } = await supabase
-    .from("video_category")
+    .from(getTableName("video_category"))
     .select("*")
     .in("id", categoryIds);
 
@@ -66,7 +67,7 @@ export const fetchVideos = async (): Promise<Video[]> => {
  */
 export const createVideo = async (video: VideoFormData): Promise<Video> => {
   const { data, error } = await supabase
-    .from("video_dev")
+    .from(getTableName("video"))
     .insert([video])
     .select()
     .single();
@@ -86,7 +87,7 @@ export const updateVideo = async (
   video: Partial<VideoFormData>
 ): Promise<Video> => {
   const { data, error } = await supabase
-    .from("video_dev")
+    .from(getTableName("video"))
     .update(video)
     .eq("id", videoId)
     .select()
@@ -108,7 +109,7 @@ export const updateVideo = async (
  */
 export const fetchCategories = async (): Promise<Category[]> => {
   const { data, error } = await supabase
-    .from("video_category")
+    .from(getTableName("video_category"))
     .select("*")
     .order("order", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: true });
@@ -127,7 +128,7 @@ export const createCategory = async (
   category: CategoryFormData
 ): Promise<Category> => {
   const { data, error } = await supabase
-    .from("video_category")
+    .from(getTableName("video_category"))
     .insert([category])
     .select()
     .single();
@@ -147,7 +148,7 @@ export const updateCategory = async (
   category: Partial<CategoryFormData>
 ): Promise<Category> => {
   const { data, error } = await supabase
-    .from("video_category")
+    .from(getTableName("video_category"))
     .update(category)
     .eq("id", categoryId)
     .select()
@@ -165,7 +166,7 @@ export const updateCategory = async (
  */
 export const deleteCategory = async (categoryId: number): Promise<void> => {
   const { error } = await supabase
-    .from("video_category")
+    .from(getTableName("video_category"))
     .delete()
     .eq("id", categoryId);
 
@@ -183,7 +184,7 @@ export const deleteCategory = async (categoryId: number): Promise<void> => {
  */
 export const fetchSubtitles = async (videoId: string): Promise<Subtitle[]> => {
   const { data, error } = await supabase
-    .from("video_subtitle_dev")
+    .from(getTableName("video_subtitle"))
     .select("*")
     .eq("video_id", videoId)
     .order("index", { ascending: true });
@@ -209,7 +210,7 @@ export const createSubtitle = async (
   };
 
   const { data, error } = await supabase
-    .from("video_subtitle_dev")
+    .from(getTableName("video_subtitle"))
     .insert([subtitleToInsert])
     .select()
     .single();
@@ -238,7 +239,7 @@ export const createSubtitles = async (
   });
 
   const { data, error } = await supabase
-    .from("video_subtitle_dev")
+    .from(getTableName("video_subtitle"))
     .insert(subtitlesToInsert)
     .select();
 
@@ -260,7 +261,7 @@ export const updateSubtitle = async (
   const subtitleToUpdate = subtitleWithoutHasSubtitle;
 
   const { data, error } = await supabase
-    .from("video_subtitle_dev")
+    .from(getTableName("video_subtitle"))
     .update(subtitleToUpdate)
     .eq("id", subtitleId)
     .select()
@@ -278,7 +279,7 @@ export const updateSubtitle = async (
  */
 export const deleteSubtitle = async (subtitleId: number): Promise<void> => {
   const { error } = await supabase
-    .from("video_subtitle_dev")
+    .from(getTableName("video_subtitle"))
     .delete()
     .eq("id", subtitleId);
 
