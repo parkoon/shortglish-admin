@@ -1,26 +1,21 @@
 "use client";
 
-import { createSession, deleteSession } from "@/lib/auth";
+import { logout as supabaseLogout } from "@/lib/auth";
 import { useRouter } from "next/navigation";
-
-const ADMIN_USERNAME = "freedom";
-const ADMIN_PASSWORD = "q1w2e3r4t5^";
 
 export function useAuth() {
   const router = useRouter();
 
-  const login = (username: string, password: string): boolean => {
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      createSession();
-      return true;
+  const logout = async () => {
+    try {
+      await supabaseLogout();
+      router.push("/login");
+    } catch (error) {
+      console.error("로그아웃 실패:", error);
+      // 에러가 발생해도 로그인 페이지로 이동
+      router.push("/login");
     }
-    return false;
   };
 
-  const logout = () => {
-    deleteSession();
-    router.push("/login");
-  };
-
-  return { login, logout };
+  return { logout };
 }

@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { isAuthenticated } from "@/lib/auth";
+import { isAuthenticated, isAdmin } from "@/lib/auth";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/lib/actions";
@@ -98,19 +98,43 @@ export default function ProtectedLayout({
   };
 
   useEffect(() => {
-    const checkAuth = () => {
-      if (!isAuthenticated()) {
-        router.push("/login");
-      } else {
+    const checkAuth = async () => {
+      try {
+        const authenticated = await isAuthenticated();
+        if (!authenticated) {
+          router.push("/login");
+          return;
+        }
+
+        // 어드민 권한 체크
+        const admin = await isAdmin();
+        if (!admin) {
+          // 어드민이 아니면 로그아웃하고 로그인 페이지로
+          await logout();
+          return;
+        }
+
         setIsChecking(false);
+      } catch (error) {
+        console.error("인증 체크 실패:", error);
+        router.push("/login");
       }
     };
 
     checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  if (isChecking || !isAuthenticated()) {
-    return null;
+  if (isChecking) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="mb-4 text-lg font-semibold text-gray-900">
+            로딩 중...
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

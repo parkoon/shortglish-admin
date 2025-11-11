@@ -10,5 +10,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // 클라이언트 컴포넌트용 Supabase 클라이언트
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
