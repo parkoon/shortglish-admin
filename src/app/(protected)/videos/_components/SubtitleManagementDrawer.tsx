@@ -179,7 +179,7 @@ export function SubtitleManagementDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onOpenChange} dismissible={false}>
-      <DrawerContent className="w-full sm:w-[90%] md:w-[800px] lg:w-[1000px] h-screen max-h-screen! mx-auto">
+      <DrawerContent className="w-full sm:w-[90%] md:w-[800px] lg:w-[1000px] h-screen max-h-screen! mx-auto ">
         <DrawerHeader className="flex justify-between">
           <DrawerTitle>{video.title}</DrawerTitle>
 
@@ -218,7 +218,7 @@ export function SubtitleManagementDrawer({
             </div>
           </div>
           {/* 저장된 자막 - 스크롤 영역 */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24">
             <SavedSubtitlesList
               subtitles={subtitles}
               isLoading={isSubtitlesLoading}

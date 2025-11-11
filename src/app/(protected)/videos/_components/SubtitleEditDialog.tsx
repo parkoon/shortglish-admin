@@ -120,7 +120,7 @@ export function SubtitleEditDialog({
               <Input
                 id="dialog-start"
                 type="number"
-                step="0.1"
+                step="any"
                 {...form.register("start_time", { valueAsNumber: true })}
               />
             </div>
@@ -129,7 +129,7 @@ export function SubtitleEditDialog({
               <Input
                 id="dialog-end"
                 type="number"
-                step="0.1"
+                step="any"
                 {...form.register("end_time", { valueAsNumber: true })}
               />
             </div>
