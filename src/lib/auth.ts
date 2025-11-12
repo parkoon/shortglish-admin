@@ -5,7 +5,7 @@ import type { User } from "@supabase/supabase-js";
 const ALLOWED_ADMIN_EMAILS = [
   // TODO: 실제 어드민 이메일로 변경 필요
   "devparkoon@gmail.com",
-  "admin2@example.com",
+  "soobinseon95@gmail.com",
 ];
 
 /**

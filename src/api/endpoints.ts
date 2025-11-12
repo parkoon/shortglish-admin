@@ -36,8 +36,10 @@ export const fetchVideos = async (): Promise<Video[]> => {
   }
 
   // 카테고리 정보 조회
-  const categoryIds = [...new Set(videos.map((v) => v.category_id).filter(Boolean))];
-  
+  const categoryIds = [
+    ...new Set(videos.map((v) => v.category_id).filter(Boolean)),
+  ];
+
   if (categoryIds.length === 0) {
     return videos.map((v) => ({ ...v, category: null }));
   }
@@ -52,9 +54,7 @@ export const fetchVideos = async (): Promise<Video[]> => {
     return videos.map((v) => ({ ...v, category: null }));
   }
 
-  const categoryMap = new Map(
-    (categories || []).map((cat) => [cat.id, cat])
-  );
+  const categoryMap = new Map((categories || []).map((cat) => [cat.id, cat]));
 
   return videos.map((v) => ({
     ...v,
