@@ -5,7 +5,12 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { fetchVideos, fetchSubtitles, fetchCategories } from "./endpoints";
+import {
+  fetchVideos,
+  fetchSubtitles,
+  fetchCategories,
+  fetchUsers,
+} from "./endpoints";
 import { queryKeys } from "./query-keys";
 
 // ============================================
@@ -51,5 +56,19 @@ export const useCategoriesQuery = () => {
   return useQuery({
     queryKey: queryKeys.categories.all,
     queryFn: fetchCategories,
+  });
+};
+
+// ============================================
+// User Queries
+// ============================================
+
+/**
+ * 유저 목록 조회 hook (Admin용 - 페이지네이션 포함)
+ */
+export const useUsersQuery = (page: number = 1, pageSize: number = 10) => {
+  return useQuery({
+    queryKey: queryKeys.users.all(page, pageSize),
+    queryFn: () => fetchUsers(page, pageSize),
   });
 };

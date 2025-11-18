@@ -15,4 +15,8 @@ export const queryKeys = {
   categories: {
     all: ["categories"] as const,
   },
+  users: {
+    all: (page: number, pageSize: number) =>
+      ["users", page, pageSize] as const,
+  },
 };

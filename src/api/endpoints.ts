@@ -12,6 +12,8 @@ import type {
   SubtitleFormData,
   Category,
   CategoryFormData,
+  User,
+  UsersResponse,
 } from "./types";
 
 // ============================================
@@ -286,4 +288,65 @@ export const deleteSubtitle = async (subtitleId: number): Promise<void> => {
   if (error) {
     throw new Error(`Failed to delete subtitle: ${error.message}`);
   }
+};
+
+// ============================================
+// User API
+// ============================================
+
+/**
+ * 유저 목록 조회 (Admin용 - 페이지네이션 포함)
+ * Supabase auth.users 테이블에 접근
+ *
+ * 참고: auth.users는 직접 쿼리할 수 없으므로,
+ * 별도의 public.users 테이블이 있거나 RLS 정책이 설정되어 있어야 합니다.
+ * 또는 Supabase의 auth.users를 조회하려면 Admin API가 필요합니다.
+ */
+export const fetchUsers = async (
+  page: number = 1,
+  pageSize: number = 10
+): Promise<UsersResponse> => {
+  // 페이지네이션을 위한 offset 계산
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  // auth.users는 직접 쿼리할 수 없으므로,
+  // 별도의 public.users 테이블을 사용하거나
+  // Supabase의 auth schema를 통해 접근해야 합니다.
+  //
+  // 일단 auth.users를 조회하려고 시도하되,
+  // 작동하지 않으면 별도 테이블을 사용해야 합니다.
+
+  // 방법 1: public.users 테이블이 있다고 가정
+  const {
+    data: usersData,
+    error: usersError,
+    count,
+  } = await supabase
+    .from("users")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (usersError) {
+    // public.users 테이블이 없으면 auth.users를 조회하려고 시도
+    // 하지만 일반 클라이언트로는 auth.users에 직접 접근할 수 없습니다.
+    throw new Error(
+      `Failed to fetch users: ${usersError.message}. Note: auth.users requires Admin API access.`
+    );
+  }
+
+  // database.ts의 Tables<"users"> 타입으로 변환
+  const users: User[] = (usersData || []) as User[];
+
+  const total = count || 0;
+  const totalPages = Math.ceil(total / pageSize);
+
+  return {
+    users,
+    total,
+    page,
+    pageSize,
+    totalPages,
+  };
 };

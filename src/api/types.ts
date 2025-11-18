@@ -158,3 +158,20 @@ export type YouTubePlayer = {
   getCurrentTime: () => number;
   destroy: () => void;
 };
+
+// ============================================
+// User Domain
+// ============================================
+
+import type { Tables } from "@/types/database";
+
+// database.ts에서 generate된 타입 사용
+export type User = Tables<"users">;
+
+export type UsersResponse = {
+  users: User[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};

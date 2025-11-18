@@ -3,17 +3,11 @@
 
 import { isAuthenticated, isAdmin } from "@/lib/auth";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import {
-  Video,
-  FolderTree,
-  LogOut,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+import { Video, FolderTree, LogOut, Users } from "lucide-react";
 
 type MenuItem = {
   title: string;
@@ -21,28 +15,21 @@ type MenuItem = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
-type MenuGroup = {
-  title: string;
-  icon: React.ComponentType<{ className?: string }>;
-  items: MenuItem[];
-};
-
-const menuGroups: MenuGroup[] = [
+const menuItems: MenuItem[] = [
   {
-    title: "영상",
+    title: "영상 관리",
+    href: "/videos",
     icon: Video,
-    items: [
-      {
-        title: "영상 관리",
-        href: "/videos",
-        icon: Video,
-      },
-      {
-        title: "카테고리 관리",
-        href: "/categories",
-        icon: FolderTree,
-      },
-    ],
+  },
+  {
+    title: "카테고리 관리",
+    href: "/categories",
+    icon: FolderTree,
+  },
+  {
+    title: "유저 관리",
+    href: "/users",
+    icon: Users,
   },
 ];
 
@@ -55,47 +42,6 @@ export default function ProtectedLayout({
   const pathname = usePathname();
   const { logout } = useAuth();
   const [isChecking, setIsChecking] = useState(true);
-
-  // 현재 경로가 영상 관련 경로인지 확인
-  const isVideoPath =
-    pathname.startsWith("/videos") || pathname.startsWith("/categories");
-
-  // 사용자가 수동으로 닫은 그룹 추적
-  const [closedGroups, setClosedGroups] = useState<Set<string>>(new Set());
-
-  // pathname에 따라 자동으로 열려야 하는 그룹 계산
-  const autoOpenGroups = useMemo(() => {
-    const groups = new Set<string>();
-    if (isVideoPath) {
-      groups.add("영상");
-    }
-    return groups;
-  }, [isVideoPath]);
-
-  // 실제로 열려있는 그룹 계산 (자동 열림 - 수동 닫힘)
-  const effectiveOpenGroups = useMemo(() => {
-    const merged = new Set<string>();
-    autoOpenGroups.forEach((group) => {
-      // 사용자가 수동으로 닫지 않은 그룹만 추가
-      if (!closedGroups.has(group)) {
-        merged.add(group);
-      }
-    });
-    return merged;
-  }, [autoOpenGroups, closedGroups]);
-
-  const toggleGroup = (groupTitle: string) => {
-    setClosedGroups((prev) => {
-      const next = new Set(prev);
-      // 현재 열려있으면 닫기, 닫혀있으면 열기
-      if (effectiveOpenGroups.has(groupTitle)) {
-        next.add(groupTitle); // 닫기
-      } else {
-        next.delete(groupTitle); // 열기
-      }
-      return next;
-    });
-  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -158,62 +104,24 @@ export default function ProtectedLayout({
 
           {/* 메뉴 */}
           <nav className="flex-1 space-y-0.5 p-3 overflow-y-auto">
-            {menuGroups.map((group) => {
-              const GroupIcon = group.icon;
-              const isOpen = effectiveOpenGroups.has(group.title);
-              const hasActiveItem = group.items.some(
-                (item) => pathname === item.href
-              );
+            {menuItems.map((item) => {
+              const ItemIcon = item.icon;
+              const isActive = pathname === item.href;
 
               return (
-                <div key={group.title} className="space-y-0.5">
-                  {/* 그룹 헤더 */}
+                <Link key={item.href} href={item.href}>
                   <Button
-                    variant={hasActiveItem ? "secondary" : "ghost"}
-                    className={`w-full justify-between font-semibold ${
-                      hasActiveItem
+                    variant={isActive ? "secondary" : "ghost"}
+                    className={`w-full justify-start font-normal ${
+                      isActive
                         ? "bg-slate-100 text-slate-900 hover:bg-slate-200"
-                        : "text-gray-700 hover:bg-gray-50"
+                        : "text-gray-600 hover:bg-gray-50"
                     }`}
-                    onClick={() => toggleGroup(group.title)}
                   >
-                    <div className="flex items-center gap-2">
-                      <GroupIcon className="h-4 w-4" />
-                      {group.title}
-                    </div>
-                    {isOpen ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
+                    <ItemIcon className="h-4 w-4 mr-2" />
+                    {item.title}
                   </Button>
-
-                  {/* 하위 메뉴 아이템 */}
-                  {isOpen && (
-                    <div className="ml-4 space-y-0.5 mt-0.5">
-                      {group.items.map((item) => {
-                        const ItemIcon = item.icon;
-                        const isActive = pathname === item.href;
-
-                        return (
-                          <Link key={item.href} href={item.href}>
-                            <Button
-                              variant={isActive ? "secondary" : "ghost"}
-                              className={`w-full justify-start font-normal ${
-                                isActive
-                                  ? "bg-slate-100 text-slate-900 hover:bg-slate-200"
-                                  : "text-gray-600 hover:bg-gray-50"
-                              }`}
-                            >
-                              <ItemIcon className="h-4 w-4 mr-2" />
-                              {item.title}
-                            </Button>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                </Link>
               );
             })}
           </nav>
