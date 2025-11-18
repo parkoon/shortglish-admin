@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      push_message: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          sent_at: string | null
+          template_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          sent_at?: string | null
+          template_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          sent_at?: string | null
+          template_code?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      push_message_dev: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          sent_at: string | null
+          template_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          sent_at?: string | null
+          template_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          sent_at?: string | null
+          template_code?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           agreed_terms: string[] | null

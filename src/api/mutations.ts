@@ -14,13 +14,17 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  createPushMessage,
+  updatePushMessage,
+  deletePushMessage,
 } from "./endpoints";
 import type {
   VideoFormData,
   SubtitleFormData,
   CategoryFormData,
+  PushMessageFormData,
 } from "./types";
-import type { Video, Subtitle, Category } from "./types";
+import type { Video, Subtitle, Category, PushMessage } from "./types";
 
 // ============================================
 // Video Mutations
@@ -118,4 +122,36 @@ export const deleteCategoryMutation = async (
   categoryId: number
 ): Promise<void> => {
   return deleteCategory(categoryId);
+};
+
+// ============================================
+// Push Message Mutations
+// ============================================
+
+/**
+ * 푸시 메시지 생성 mutation 함수
+ */
+export const createPushMessageMutation = async (
+  message: PushMessageFormData
+): Promise<PushMessage> => {
+  return createPushMessage(message);
+};
+
+/**
+ * 푸시 메시지 수정 mutation 함수
+ */
+export const updatePushMessageMutation = async (
+  messageId: string,
+  message: Partial<PushMessageFormData>
+): Promise<PushMessage> => {
+  return updatePushMessage(messageId, message);
+};
+
+/**
+ * 푸시 메시지 삭제 mutation 함수
+ */
+export const deletePushMessageMutation = async (
+  messageId: string
+): Promise<void> => {
+  return deletePushMessage(messageId);
 };

@@ -175,3 +175,17 @@ export type UsersResponse = {
   pageSize: number;
   totalPages: number;
 };
+
+// ============================================
+// Push Message Domain
+// ============================================
+
+// database.ts에서 generate된 타입 사용
+export type PushMessage = Tables<"push_message">;
+
+export const pushMessageFormSchema = z.object({
+  description: z.string().optional(),
+  template_code: z.string().min(1, "템플릿 코드를 입력하세요"),
+});
+
+export type PushMessageFormData = z.infer<typeof pushMessageFormSchema>;

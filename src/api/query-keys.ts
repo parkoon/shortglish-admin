@@ -16,7 +16,9 @@ export const queryKeys = {
     all: ["categories"] as const,
   },
   users: {
-    all: (page: number, pageSize: number) =>
-      ["users", page, pageSize] as const,
+    all: (page: number, pageSize: number) => ["users", page, pageSize] as const,
+  },
+  pushMessages: {
+    all: ["pushMessages"] as const,
   },
 };

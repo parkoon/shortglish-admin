@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * API Endpoints
  * 모든 API 호출 함수들을 도메인별로 관리
@@ -14,6 +15,8 @@ import type {
   CategoryFormData,
   User,
   UsersResponse,
+  PushMessage,
+  PushMessageFormData,
 } from "./types";
 
 // ============================================
@@ -349,4 +352,102 @@ export const fetchUsers = async (
     pageSize,
     totalPages,
   };
+};
+
+// ============================================
+// Push Message API
+// ============================================
+
+/**
+ * 푸시 메시지 목록 조회 (Admin용)
+ */
+export const fetchPushMessages = async (): Promise<PushMessage[]> => {
+  const { data, error } = await supabase
+    .from(getTableName("push_message"))
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to fetch push messages: ${error.message}`);
+  }
+
+  return (data || []) as PushMessage[];
+};
+
+/**
+ * 푸시 메시지 생성 (Admin용)
+ */
+export const createPushMessage = async (
+  message: PushMessageFormData
+): Promise<PushMessage> => {
+  const { data, error } = await supabase
+    .from(getTableName("push_message"))
+    .insert({
+      description: message.description || null,
+      template_code: message.template_code,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create push message: ${error.message}`);
+  }
+
+  return data as PushMessage;
+};
+
+/**
+ * 푸시 메시지 수정 (Admin용)
+ */
+export const updatePushMessage = async (
+  id: string,
+  message: Partial<PushMessageFormData>
+): Promise<PushMessage> => {
+  const { data, error } = await supabase
+    .from(getTableName("push_message"))
+    .update(message)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update push message: ${error.message}`);
+  }
+
+  return data as PushMessage;
+};
+
+/**
+ * 푸시 메시지 삭제 (Admin용)
+ */
+export const deletePushMessage = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from(getTableName("push_message"))
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(`Failed to delete push message: ${error.message}`);
+  }
+};
+
+/**
+ * 푸시 메시지 발송 (Admin용)
+ * status를 'sent'로 변경하고 sent_at을 현재 시간으로 설정
+ */
+export const sendPushMessage = async (id: string): Promise<PushMessage> => {
+  const { data, error } = await supabase
+    .from(getTableName("push_message"))
+    .update({
+      sent_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to send push message: ${error.message}`);
+  }
+
+  return data as PushMessage;
 };

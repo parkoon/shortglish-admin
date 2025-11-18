@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Video, FolderTree, LogOut, Users } from "lucide-react";
+import { Video, FolderTree, LogOut, Users, Bell } from "lucide-react";
 
 type MenuItem = {
   title: string;
@@ -30,6 +30,11 @@ const menuItems: MenuItem[] = [
     title: "유저 관리",
     href: "/users",
     icon: Users,
+  },
+  {
+    title: "푸시 메시지",
+    href: "/push-messages",
+    icon: Bell,
   },
 ];
 

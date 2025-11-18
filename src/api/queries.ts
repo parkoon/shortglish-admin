@@ -10,6 +10,7 @@ import {
   fetchSubtitles,
   fetchCategories,
   fetchUsers,
+  fetchPushMessages,
 } from "./endpoints";
 import { queryKeys } from "./query-keys";
 
@@ -70,5 +71,19 @@ export const useUsersQuery = (page: number = 1, pageSize: number = 10) => {
   return useQuery({
     queryKey: queryKeys.users.all(page, pageSize),
     queryFn: () => fetchUsers(page, pageSize),
+  });
+};
+
+// ============================================
+// Push Message Queries
+// ============================================
+
+/**
+ * 푸시 메시지 목록 조회 hook (Admin용)
+ */
+export const usePushMessagesQuery = () => {
+  return useQuery({
+    queryKey: queryKeys.pushMessages.all,
+    queryFn: fetchPushMessages,
   });
 };
