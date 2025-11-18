@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { BlankedTextEditor } from "./BlankedTextEditor";
 
@@ -52,6 +52,44 @@ export function SubtitleEditDialog({
   });
 
   const hasSubtitle = form.watch("has_subtitle");
+  const startTime = form.watch("start_time");
+  const endTime = form.watch("end_time");
+  const originText = form.watch("origin_text");
+  const blankedText = form.watch("blanked_text");
+  const translation = form.watch("translation");
+
+  // 저장 버튼 disabled 조건 계산
+  const isSaveDisabled = useMemo(() => {
+    if (isSaving) return true;
+
+    // 시작초와 종료초는 항상 필수
+    if (!startTime || startTime <= 0 || !endTime || endTime <= 0) {
+      return true;
+    }
+
+    // 자막 여부가 false면 시작초, 종료초만 체크
+    if (!hasSubtitle) {
+      return false; // 시작초, 종료초가 모두 있으면 저장 가능
+    }
+
+    // 자막 여부가 true면 모든 필드 필수
+    return (
+      !originText ||
+      originText.trim().length === 0 ||
+      !blankedText ||
+      blankedText.trim().length === 0 ||
+      !translation ||
+      translation.trim().length === 0
+    );
+  }, [
+    isSaving,
+    hasSubtitle,
+    startTime,
+    endTime,
+    originText,
+    blankedText,
+    translation,
+  ]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -92,13 +130,20 @@ export function SubtitleEditDialog({
   }, [isOpen, subtitle, form]);
 
   const handleSubmit = (data: SubtitleFormInput) => {
-    if (!data.has_subtitle) {
-      return;
-    }
-
     const { has_subtitle, ...subtitleData } = data;
     const subtitleId = subtitle?.id || null;
-    onSave(subtitleId, subtitleData);
+
+    // has_subtitle이 false면 자막 관련 필드는 제외하고 시작초, 종료초만 저장
+    if (!has_subtitle) {
+      onSave(subtitleId, {
+        start_time: subtitleData.start_time,
+        end_time: subtitleData.end_time,
+      });
+    } else {
+      // has_subtitle이 true면 모든 필드 저장
+      onSave(subtitleId, subtitleData);
+    }
+
     onOpenChange(false);
   };
 
@@ -203,7 +248,7 @@ export function SubtitleEditDialog({
             >
               취소
             </Button>
-            <Button type="submit" disabled={isSaving || !hasSubtitle}>
+            <Button type="submit" disabled={isSaveDisabled}>
               {isSaving ? "저장 중..." : "저장"}
             </Button>
           </DialogFooter>

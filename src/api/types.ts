@@ -78,14 +78,36 @@ export const subtitleSchema = z.object({
 });
 
 // 폼 입력용 스키마 (has_subtitle 포함)
-export const subtitleFormInputSchema = z.object({
-  start_time: z.number().min(0, "시작 시간을 입력하세요"),
-  end_time: z.number().min(0, "종료 시간을 입력하세요"),
-  has_subtitle: z.boolean(),
-  origin_text: z.string().optional(),
-  blanked_text: z.string().optional(),
-  translation: z.string().optional(),
-});
+export const subtitleFormInputSchema = z
+  .object({
+    start_time: z.number().min(0, "시작 시간을 입력하세요"),
+    end_time: z.number().min(0, "종료 시간을 입력하세요"),
+    has_subtitle: z.boolean(),
+    origin_text: z.string().optional(),
+    blanked_text: z.string().optional(),
+    translation: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // 자막 여부가 false면 시작초, 종료초만 필수
+      if (!data.has_subtitle) {
+        return true; // has_subtitle이 false면 다른 필드는 검증하지 않음
+      }
+      // 자막 여부가 true면 모든 필드 필수
+      return (
+        data.origin_text !== undefined &&
+        data.origin_text.trim().length > 0 &&
+        data.blanked_text !== undefined &&
+        data.blanked_text.trim().length > 0 &&
+        data.translation !== undefined &&
+        data.translation.trim().length > 0
+      );
+    },
+    {
+      message: "원본 텍스트, 빈칸 처리된 텍스트, 번역을 모두 입력해주세요",
+      path: ["origin_text"], // 에러 메시지를 origin_text에 표시
+    }
+  );
 
 // DB 저장용 스키마 (index 포함, has_subtitle 제외)
 export const subtitleFormDataSchema = subtitleSchema.extend({
