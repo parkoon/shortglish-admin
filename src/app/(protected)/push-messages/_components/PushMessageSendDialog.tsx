@@ -50,8 +50,10 @@ export function PushMessageSendDialog({
   const [showFailedList, setShowFailedList] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryingUserKeys, setRetryingUserKeys] = useState<number[]>([]);
+  const [activeUserCount, setActiveUserCount] = useState<number | null>(null);
+  const [isLoadingUserCount, setIsLoadingUserCount] = useState(false);
 
-  // 다이얼로그가 열릴 때 초기화
+  // 다이얼로그가 열릴 때 초기화 및 활성 유저 수 조회
   useEffect(() => {
     if (isOpen) {
       setSendMode("all");
@@ -61,6 +63,21 @@ export function PushMessageSendDialog({
       setShowFailedList(false);
       setIsRetrying(false);
       setRetryingUserKeys([]);
+      setActiveUserCount(null);
+
+      // 활성 유저 수 조회
+      setIsLoadingUserCount(true);
+      fetchActiveUsers()
+        .then((users) => {
+          setActiveUserCount(users.length);
+        })
+        .catch((error) => {
+          console.error("Failed to fetch active users count:", error);
+          setActiveUserCount(null);
+        })
+        .finally(() => {
+          setIsLoadingUserCount(false);
+        });
     }
   }, [isOpen]);
 
@@ -248,6 +265,15 @@ export function PushMessageSendDialog({
                       <div className="font-medium">전체 발송</div>
                       <div className="text-sm text-gray-500">
                         탈퇴하지 않은 모든 사용자에게 발송
+                        {isLoadingUserCount ? (
+                          <span className="ml-2 text-gray-400">
+                            (조회 중...)
+                          </span>
+                        ) : activeUserCount !== null ? (
+                          <span className="ml-2 font-semibold text-gray-700">
+                            ({activeUserCount.toLocaleString()}명)
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                   </label>
