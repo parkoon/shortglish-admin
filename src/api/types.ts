@@ -189,3 +189,17 @@ export const pushMessageFormSchema = z.object({
 });
 
 export type PushMessageFormData = z.infer<typeof pushMessageFormSchema>;
+
+// 배치 발송 결과 타입
+export type SendResult = {
+  userKey: number;
+  name?: string;
+  success: boolean;
+  error?: string;
+};
+
+export type BatchSendResult = {
+  success: number;
+  failed: number;
+  results: SendResult[];
+};

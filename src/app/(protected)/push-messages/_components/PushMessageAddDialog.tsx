@@ -61,7 +61,7 @@ export function PushMessageAddDialog({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4" />
           푸시 메시지 추가
         </Button>
       </DialogTrigger>

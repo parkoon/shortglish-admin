@@ -15,18 +15,16 @@ import { Send, Trash2 } from "lucide-react";
 type PushMessageTableProps = {
   messages: PushMessage[];
   isLoading: boolean;
-  onSend: (id: string) => void;
+  onSendClick: (id: string, templateCode: string | null) => void;
   onDelete: (id: string) => void;
-  isSending: boolean;
   isDeleting: boolean;
 };
 
 export function PushMessageTable({
   messages,
   isLoading,
-  onSend,
+  onSendClick,
   onDelete,
-  isSending,
   isDeleting,
 }: PushMessageTableProps) {
   return (
@@ -82,8 +80,10 @@ export function PushMessageTable({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onSend(message.id)}
-                        disabled={isSending || isDeleting}
+                        onClick={() =>
+                          onSendClick(message.id, message.template_code)
+                        }
+                        disabled={isDeleting}
                         className="flex items-center gap-2"
                       >
                         <Send className="h-4 w-4" />
@@ -93,7 +93,7 @@ export function PushMessageTable({
                         variant="outline"
                         size="sm"
                         onClick={() => onDelete(message.id)}
-                        disabled={isSending || isDeleting}
+                        disabled={isDeleting}
                         className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="h-4 w-4" />

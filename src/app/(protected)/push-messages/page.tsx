@@ -5,10 +5,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { PushMessageTable } from "./_components/PushMessageTable";
 import { PushMessageAddDialog } from "./_components/PushMessageAddDialog";
+import { PushMessageSendDialog } from "./_components/PushMessageSendDialog";
 import {
   usePushMessagesQuery,
   queryKeys,
-  sendPushMessage,
   createPushMessageMutation,
   deletePushMessageMutation,
   type PushMessageFormData,
@@ -16,17 +16,13 @@ import {
 
 export default function PushMessagesPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isSendDialogOpen, setIsSendDialogOpen] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<{
+    id: string;
+    templateSetCode: string;
+  } | null>(null);
   const queryClient = useQueryClient();
   const { data: pushMessages, isLoading, error } = usePushMessagesQuery();
-
-  const sendMutation = useMutation({
-    mutationFn: (id: string) => sendPushMessage(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.pushMessages.all,
-      });
-    },
-  });
 
   const createMutation = useMutation({
     mutationFn: (data: PushMessageFormData) => createPushMessageMutation(data),
@@ -47,19 +43,19 @@ export default function PushMessagesPage() {
     },
   });
 
-  const handleSend = async (id: string) => {
-    if (confirm("정말 이 푸시 메시지를 발송하시겠습니까?")) {
-      try {
-        await sendMutation.mutateAsync(id);
-        alert("푸시 메시지가 발송되었습니다.");
-      } catch (error) {
-        alert(
-          `푸시 메시지 발송 실패: ${
-            error instanceof Error ? error.message : "알 수 없는 오류"
-          }`
-        );
-      }
+  const handleSendClick = (id: string, templateSetCode: string | null) => {
+    if (!templateSetCode) {
+      alert("템플릿 코드가 없습니다.");
+      return;
     }
+    setSelectedMessage({ id, templateSetCode });
+    setIsSendDialogOpen(true);
+  };
+
+  const handleSendSuccess = () => {
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.pushMessages.all,
+    });
   };
 
   const handleDelete = async (id: string) => {
@@ -115,11 +111,20 @@ export default function PushMessagesPage() {
         <PushMessageTable
           messages={pushMessages || []}
           isLoading={isLoading}
-          onSend={handleSend}
+          onSendClick={handleSendClick}
           onDelete={handleDelete}
-          isSending={sendMutation.isPending}
           isDeleting={deleteMutation.isPending}
         />
+
+        {selectedMessage && (
+          <PushMessageSendDialog
+            isOpen={isSendDialogOpen}
+            onOpenChange={setIsSendDialogOpen}
+            messageId={selectedMessage.id}
+            templateSetCode={selectedMessage.templateSetCode}
+            onSuccess={handleSendSuccess}
+          />
+        )}
       </div>
     </div>
   );

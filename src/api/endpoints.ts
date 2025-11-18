@@ -17,6 +17,8 @@ import type {
   UsersResponse,
   PushMessage,
   PushMessageFormData,
+  BatchSendResult,
+  SendResult,
 } from "./types";
 
 // ============================================
@@ -354,6 +356,24 @@ export const fetchUsers = async (
   };
 };
 
+/**
+ * 활성 유저 목록 조회 (Admin용 - deleted_at이 null인 모든 유저)
+ * 전체 발송용
+ */
+export const fetchActiveUsers = async (): Promise<User[]> => {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to fetch active users: ${error.message}`);
+  }
+
+  return (data || []) as User[];
+};
+
 // ============================================
 // Push Message API
 // ============================================
@@ -432,10 +452,125 @@ export const deletePushMessage = async (id: string): Promise<void> => {
 };
 
 /**
- * 푸시 메시지 발송 (Admin용)
- * status를 'sent'로 변경하고 sent_at을 현재 시간으로 설정
+ * 푸시 메시지 단일 발송 (Admin용)
+ * 단일 userKey에 대해 외부 API를 호출
  */
-export const sendPushMessage = async (id: string): Promise<PushMessage> => {
+export const sendPushMessageToUser = async (
+  userKey: number,
+  templateSetCode: string
+): Promise<void> => {
+  const response = await fetch(
+    "https://shortglish-be-production.up.railway.app/api/toss/push/send-message",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userKey,
+        templateSetCode,
+        context: {},
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to send push message to user ${userKey}: ${response.status} ${errorText}`
+    );
+  }
+};
+
+/**
+ * 푸시 메시지 배치 발송 (Admin용)
+ * 여러 userKey에 대해 10개씩 묶어서 병렬 처리
+ * 각 요청의 성공/실패를 개별적으로 추적
+ */
+export const sendPushMessageBatch = async (
+  userKeys: Array<{ userKey: number; name?: string }>,
+  templateSetCode: string,
+  onProgress?: (completed: number, total: number) => void
+): Promise<BatchSendResult> => {
+  const results: SendResult[] = [];
+  const total = userKeys.length;
+  const batchSize = 10;
+
+  // 10개씩 묶어서 처리
+  for (let i = 0; i < userKeys.length; i += batchSize) {
+    const batch = userKeys.slice(i, i + batchSize);
+
+    // 배치 내에서 병렬 처리
+    const batchPromises = batch.map(async ({ userKey, name }) => {
+      try {
+        await sendPushMessageToUser(userKey, templateSetCode);
+        return {
+          userKey,
+          name,
+          success: true,
+        } as SendResult;
+      } catch (error) {
+        return {
+          userKey,
+          name,
+          success: false,
+          error: error instanceof Error ? error.message : "알 수 없는 오류",
+        } as SendResult;
+      }
+    });
+
+    const batchResults = await Promise.all(batchPromises);
+    results.push(...batchResults);
+
+    // 진행률 업데이트
+    if (onProgress) {
+      onProgress(results.length, total);
+    }
+  }
+
+  const success = results.filter((r) => r.success).length;
+  const failed = results.filter((r) => !r.success).length;
+
+  return {
+    success,
+    failed,
+    results,
+  };
+};
+
+/**
+ * 푸시 메시지 발송 (Admin용)
+ * 외부 API를 호출하고, 성공 시 sent_at을 현재 시간으로 설정
+ * @deprecated 단일 발송은 sendPushMessageToUser 사용, 배치 발송은 sendPushMessageBatch 사용
+ */
+export const sendPushMessage = async (
+  id: string,
+  templateSetCode: string
+): Promise<PushMessage> => {
+  // 외부 API 호출
+  const response = await fetch(
+    "https://shortglish-be-production.up.railway.app/api/toss/push/send-message",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userKey: 518165018,
+        templateSetCode,
+        context: {},
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to send push message: ${response.status} ${errorText}`
+    );
+  }
+
+  // 외부 API 호출 성공 시 sent_at 업데이트
   const { data, error } = await supabase
     .from(getTableName("push_message"))
     .update({
@@ -446,7 +581,7 @@ export const sendPushMessage = async (id: string): Promise<PushMessage> => {
     .single();
 
   if (error) {
-    throw new Error(`Failed to send push message: ${error.message}`);
+    throw new Error(`Failed to update push message: ${error.message}`);
   }
 
   return data as PushMessage;
