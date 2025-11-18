@@ -36,3 +36,4 @@ export function getTableName(baseName: string): string {
   }
   return `${baseName}_dev`;
 }
+

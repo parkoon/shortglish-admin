@@ -167,6 +167,7 @@ export function SubtitleEditDialog({
                   control={form.control}
                   render={({ field }) => (
                     <BlankedTextEditor
+                      key={form.watch("origin_text") || "empty"}
                       originText={form.watch("origin_text") || ""}
                       initialBlankedText={
                         subtitle?.blanked_text || field.value || ""

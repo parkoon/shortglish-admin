@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -211,42 +211,28 @@ export function BlankedTextEditor({
   onChange,
   className,
 }: BlankedTextEditorProps) {
-  // 초기 blanked_text가 있으면 파싱하여 선택 상태 복원
-  // 원본 텍스트가 변경되면 선택 상태 초기화 (단, initialBlankedText가 있고 파싱 가능한 경우는 제외)
-  const parsedIndices = useMemo(() => {
-    if (!initialBlankedText || !originText) {
-      return new Set<number>();
-    }
-    return parseBlankedText(originText, initialBlankedText);
-  }, [initialBlankedText, originText]);
-
-  const [selectedIndices, setSelectedIndices] =
-    useState<Set<number>>(parsedIndices);
-
-  // parsedIndices가 변경되면 selectedIndices 업데이트
-  useEffect(() => {
-    setSelectedIndices(parsedIndices);
-  }, [parsedIndices]);
-
   // 단어 토큰 생성
   const tokens = useMemo(() => {
     return tokenizeText(originText);
   }, [originText]);
 
-  // 선택 상태 변경 시 blanked_text 생성 및 전달
-  // 초기 로드 시에는 파싱된 결과가 설정되므로 onChange를 호출하지 않음
-  const isInitialMount = useRef(true);
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      // 초기 로드 시에는 파싱된 결과를 그대로 사용
-      if (originText && selectedIndices.size > 0) {
-        const blankedText = buildBlankedText(originText, selectedIndices);
-        onChange(blankedText);
-      }
-      return;
+  // 초기 선택 상태 계산 함수
+  const getInitialIndices = (text: string, blanked: string | undefined) => {
+    if (!blanked || !text) {
+      return new Set<number>();
     }
+    return parseBlankedText(text, blanked);
+  };
 
+  // 선택된 단어 인덱스 상태
+  // key prop을 통해 originText가 변경되면 컴포넌트가 리마운트되므로
+  // 초기값이 자동으로 다시 계산됨
+  const [selectedIndices, setSelectedIndices] = useState<Set<number>>(() => {
+    return getInitialIndices(originText, initialBlankedText);
+  });
+
+  // 선택 상태가 변경될 때마다 blanked_text 생성 및 전달
+  useEffect(() => {
     if (!originText) return;
 
     const blankedText = buildBlankedText(originText, selectedIndices);
@@ -258,9 +244,9 @@ export function BlankedTextEditor({
       const next = new Set(prev);
       if (next.has(wordIndex)) {
         next.delete(wordIndex);
-        return next;
+      } else {
+        next.add(wordIndex);
       }
-      next.add(wordIndex);
       return next;
     });
   };
