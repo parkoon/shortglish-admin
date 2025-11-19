@@ -262,18 +262,14 @@ export function PushMessageSendDialog({
                       className="w-4 h-4 text-blue-600"
                     />
                     <div className="flex-1">
-                      <div className="font-medium">전체 발송</div>
+                      <div className="font-medium">
+                        전체 발송
+                        <span className="ml-0.5 text-sm text-gray-800">
+                          ({activeUserCount?.toLocaleString()}명)
+                        </span>
+                      </div>
                       <div className="text-sm text-gray-500">
                         탈퇴하지 않은 모든 사용자에게 발송
-                        {isLoadingUserCount ? (
-                          <span className="ml-2 text-gray-400">
-                            (조회 중...)
-                          </span>
-                        ) : activeUserCount !== null ? (
-                          <span className="ml-2 font-semibold text-gray-700">
-                            ({activeUserCount.toLocaleString()}명)
-                          </span>
-                        ) : null}
                       </div>
                     </div>
                   </label>
