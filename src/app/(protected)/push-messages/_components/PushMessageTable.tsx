@@ -39,9 +39,6 @@ export function PushMessageTable({
               <TableHead className="font-semibold text-gray-700">
                 설명
               </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                액션
-              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
