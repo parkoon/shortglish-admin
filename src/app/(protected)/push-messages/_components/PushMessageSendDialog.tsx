@@ -99,7 +99,7 @@ export function PushMessageSendDialog({
         // 전체 발송: 활성 유저 조회
         const activeUsers = await fetchActiveUsers();
         userKeys = activeUsers.map((user) => ({
-          userKey: Number(user.id),
+          userKey: Number(user.external_user_id),
           name: user.name || "",
         }));
       } else {
