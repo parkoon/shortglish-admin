@@ -23,7 +23,9 @@ import { useState, useRef, useEffect } from "react";
 import { SavedSubtitlesList } from "./SavedSubtitlesList";
 import { YouTubePlayer } from "./YouTubePlayer";
 import { Button } from "@/components/ui/button";
-import { Plus, XIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Plus, XIcon, Play } from "lucide-react";
 import { SubtitleEditDialog } from "./SubtitleEditDialog";
 import type { Subtitle } from "@/api";
 
@@ -43,7 +45,8 @@ export function SubtitleManagementDrawer({
   );
   const [editingSubtitle, setEditingSubtitle] = useState<Subtitle | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [seekTime, setSeekTime] = useState<string>("");
+  const animationFrameRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
 
   const { data: subtitles, isLoading: isSubtitlesLoading } = useSubtitlesQuery(
@@ -140,37 +143,64 @@ export function SubtitleManagementDrawer({
     }
   };
 
-  const clearPlaybackInterval = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+  const clearPlaybackAnimation = () => {
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
   };
 
   useEffect(() => {
-    return clearPlaybackInterval;
+    return clearPlaybackAnimation;
   }, []);
 
   const handleSubtitleClick = (startTime: number, endTime: number) => {
     if (!youtubePlayer) return;
 
-    clearPlaybackInterval();
+    clearPlaybackAnimation();
 
     youtubePlayer.seekTo(startTime, true);
     youtubePlayer.playVideo();
 
-    intervalRef.current = setInterval(() => {
+    const checkPlayback = () => {
       if (!youtubePlayer) {
-        clearPlaybackInterval();
+        clearPlaybackAnimation();
         return;
       }
 
       const currentTime = youtubePlayer.getCurrentTime();
       if (currentTime >= endTime) {
         youtubePlayer.pauseVideo();
-        clearPlaybackInterval();
+        clearPlaybackAnimation();
+        return;
       }
-    }, 100);
+
+      // 재귀적으로 requestAnimationFrame 호출
+      animationFrameRef.current = requestAnimationFrame(checkPlayback);
+    };
+
+    // 첫 번째 프레임 요청
+    animationFrameRef.current = requestAnimationFrame(checkPlayback);
+  };
+
+  const handleSeekTo = () => {
+    if (!youtubePlayer) return;
+
+    const time = parseFloat(seekTime);
+    if (isNaN(time) || time < 0) {
+      alert("올바른 시간을 입력해주세요 (0 이상의 숫자)");
+      return;
+    }
+
+    clearPlaybackAnimation();
+    youtubePlayer.seekTo(time, true);
+    setSeekTime("");
+  };
+
+  const handleSeekTimeKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSeekTo();
+    }
   };
 
   if (!video) {
@@ -202,7 +232,37 @@ export function SubtitleManagementDrawer({
 
           {/* 자막 추가 버튼 - 고정 영역 */}
           <div className="shrink-0 border-b px-4 py-3">
-            <div className="flex justify-end">
+            <div className="flex justify-between items-center gap-4">
+              {/* 시간 이동 기능 */}
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="seek-time"
+                  className="text-sm whitespace-nowrap"
+                >
+                  시간 이동:
+                </Label>
+                <Input
+                  id="seek-time"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={seekTime}
+                  onChange={(e) => setSeekTime(e.target.value)}
+                  onKeyPress={handleSeekTimeKeyPress}
+                  placeholder="초 (예: 10.5)"
+                  className="w-32"
+                  disabled={!youtubePlayer}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSeekTo}
+                  disabled={!youtubePlayer || !seekTime}
+                >
+                  <Play className="h-4 w-4 mr-1" />
+                  이동
+                </Button>
+              </div>
               <Button
                 size="sm"
                 onClick={handleAddClick}
