@@ -194,7 +194,7 @@ export function SubtitleManagementDrawer({
 
     clearPlaybackAnimation();
     youtubePlayer.seekTo(time, true);
-    setSeekTime("");
+    youtubePlayer.playVideo();
   };
 
   const handleSeekTimeKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -239,7 +239,7 @@ export function SubtitleManagementDrawer({
                   htmlFor="seek-time"
                   className="text-sm whitespace-nowrap"
                 >
-                  시간 이동:
+                  시간 이동
                 </Label>
                 <Input
                   id="seek-time"
@@ -260,7 +260,6 @@ export function SubtitleManagementDrawer({
                   disabled={!youtubePlayer || !seekTime}
                 >
                   <Play className="h-4 w-4 mr-1" />
-                  이동
                 </Button>
               </div>
               <Button
