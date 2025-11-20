@@ -10,7 +10,6 @@ export function StatusBadge({ status }: StatusBadgeProps) {
           <div className="absolute inset-0 rounded-full bg-green-300 opacity-60"></div>
           <div className="relative h-3 w-3 rounded-full bg-green-600 m-0.5"></div>
         </div>
-        <span className="text-sm font-medium text-green-700">공개됨</span>
       </div>
     );
   }
@@ -20,7 +19,6 @@ export function StatusBadge({ status }: StatusBadgeProps) {
         <div className="absolute inset-0 rounded-full bg-gray-300 opacity-60"></div>
         <div className="relative h-3 w-3 rounded-full bg-gray-500 m-0.5"></div>
       </div>
-      <span className="text-sm font-medium text-gray-700">임시저장</span>
     </div>
   );
 }
