@@ -19,6 +19,7 @@ import type {
   PushMessageFormData,
   BatchSendResult,
   SendResult,
+  BatchSendResponse,
 } from "./types";
 
 // ============================================
@@ -453,7 +454,7 @@ export const deletePushMessage = async (id: string): Promise<void> => {
 
 /**
  * 푸시 메시지 단일 발송 (Admin용)
- * 단일 userKey에 대해 외부 API를 호출
+ * 단일 userKey에 대해 외부 API를 호출 (새로운 배열 API 사용)
  */
 export const sendPushMessageToUser = async (
   userKey: number,
@@ -467,7 +468,7 @@ export const sendPushMessageToUser = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        userKey,
+        userKeys: [userKey], // 배열로 변경
         templateSetCode,
         context: {},
       }),
@@ -480,62 +481,155 @@ export const sendPushMessageToUser = async (
       `Failed to send push message to user ${userKey}: ${response.status} ${errorText}`
     );
   }
+
+  // 응답 파싱하여 에러 확인
+  const result: BatchSendResponse = await response.json();
+  if (!result.success || result.data.results.length === 0) {
+    throw new Error(
+      `Failed to send push message to user ${userKey}: ${result.message}`
+    );
+  }
+
+  const userResult = result.data.results[0];
+  if (!userResult.success) {
+    throw new Error(
+      `Failed to send push message to user ${userKey}: ${
+        userResult.error?.message || "알 수 없는 오류"
+      }`
+    );
+  }
 };
 
 /**
  * 푸시 메시지 배치 발송 (Admin용)
- * 여러 userKey에 대해 10개씩 묶어서 병렬 처리
+ * 여러 userKey를 배열로 한 번에 전송 (서버에서 내부적으로 10개씩 처리)
  * 각 요청의 성공/실패를 개별적으로 추적
  */
 export const sendPushMessageBatch = async (
   userKeys: Array<{ userKey: number; name?: string }>,
-  templateSetCode: string,
-  onProgress?: (completed: number, total: number) => void
+  templateSetCode: string
 ): Promise<BatchSendResult> => {
-  const results: SendResult[] = [];
   const total = userKeys.length;
-  const batchSize = 10;
 
-  // 10개씩 묶어서 처리
-  for (let i = 0; i < userKeys.length; i += batchSize) {
-    const batch = userKeys.slice(i, i + batchSize);
-
-    // 배치 내에서 병렬 처리
-    const batchPromises = batch.map(async ({ userKey, name }) => {
-      try {
-        await sendPushMessageToUser(userKey, templateSetCode);
-        return {
-          userKey,
-          name,
-          success: true,
-        } as SendResult;
-      } catch (error) {
-        return {
-          userKey,
-          name,
-          success: false,
-          error: error instanceof Error ? error.message : "알 수 없는 오류",
-        } as SendResult;
-      }
-    });
-
-    const batchResults = await Promise.all(batchPromises);
-    results.push(...batchResults);
-
-    // 진행률 업데이트
-    if (onProgress) {
-      onProgress(results.length, total);
-    }
+  if (total === 0) {
+    return {
+      success: 0,
+      failed: 0,
+      results: [],
+    };
   }
 
-  const success = results.filter((r) => r.success).length;
-  const failed = results.filter((r) => !r.success).length;
+  // userKey 배열 추출
+  const userKeyArray = userKeys.map((u) => u.userKey);
 
-  return {
-    success,
-    failed,
-    results,
-  };
+  try {
+    // 한 번에 배열로 전송 (서버에서 내부적으로 배치 처리)
+    const response = await fetch(
+      "https://shortglish-be-production.up.railway.app/api/toss/push/send-message",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userKeys: userKeyArray,
+          templateSetCode,
+          context: {},
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to send push messages: ${response.status} ${errorText}`
+      );
+    }
+
+    // 서버 응답 파싱
+    const apiResponse: BatchSendResponse = await response.json();
+
+    if (!apiResponse.success) {
+      throw new Error(
+        apiResponse.message || "푸시 메시지 발송 중 오류가 발생했습니다."
+      );
+    }
+
+    // 서버 응답을 클라이언트 형식으로 변환
+    const results: SendResult[] = apiResponse.data.results.map(
+      (serverResult) => {
+        // userKeys 배열에서 해당 userKey의 name 찾기
+        const userInfo = userKeys.find(
+          (u) => u.userKey === serverResult.userKey
+        );
+
+        return {
+          userKey: serverResult.userKey,
+          name: userInfo?.name,
+          success: serverResult.success,
+          error: serverResult.error?.message,
+        };
+      }
+    );
+
+    // 서버에서 반환하지 않은 userKey가 있는 경우 실패로 처리
+    const returnedUserKeys = new Set(
+      apiResponse.data.results.map((r) => r.userKey)
+    );
+    const missingUserKeys = userKeys.filter(
+      (u) => !returnedUserKeys.has(u.userKey)
+    );
+
+    missingUserKeys.forEach((userInfo) => {
+      results.push({
+        userKey: userInfo.userKey,
+        name: userInfo.name,
+        success: false,
+        error: "서버 응답에 포함되지 않음",
+      });
+    });
+
+    return {
+      success: apiResponse.data.summary.success,
+      failed: apiResponse.data.summary.failed + missingUserKeys.length,
+      results,
+    };
+  } catch (error) {
+    // 네트워크 오류나 서버 오류 시 모든 사용자를 실패로 처리
+    const results: SendResult[] = userKeys.map((userInfo) => ({
+      userKey: userInfo.userKey,
+      name: userInfo.name,
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.",
+    }));
+
+    return {
+      success: 0,
+      failed: total,
+      results,
+    };
+  }
+};
+
+/**
+ * 푸시 메시지 발송 후 sent_at 업데이트 (Admin용)
+ */
+export const updatePushMessageSentAt = async (
+  messageId: string
+): Promise<void> => {
+  const { error } = await supabase
+    .from(getTableName("push_message"))
+    .update({
+      sent_at: new Date().toISOString(),
+    })
+    .eq("id", messageId);
+
+  if (error) {
+    throw new Error(`Failed to update sent_at: ${error.message}`);
+  }
 };
 
 /**

@@ -203,3 +203,32 @@ export type BatchSendResult = {
   failed: number;
   results: SendResult[];
 };
+
+// 서버 API 응답 타입 (새로운 배열 API)
+export type BatchSendResponseResult = {
+  userKey: number;
+  success: boolean;
+  result?: {
+    msgCount: number;
+    sentPushCount: number;
+    sentInboxCount: number;
+    [key: string]: unknown;
+  };
+  error?: {
+    message: string;
+    code?: string;
+  };
+};
+
+export type BatchSendResponse = {
+  success: boolean;
+  data: {
+    results: BatchSendResponseResult[];
+    summary: {
+      total: number;
+      success: number;
+      failed: number;
+    };
+  };
+  message: string;
+};

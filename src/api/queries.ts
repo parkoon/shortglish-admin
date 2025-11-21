@@ -10,6 +10,7 @@ import {
   fetchSubtitles,
   fetchCategories,
   fetchUsers,
+  fetchActiveUsers,
   fetchPushMessages,
 } from "./endpoints";
 import { queryKeys } from "./query-keys";
@@ -71,6 +72,16 @@ export const useUsersQuery = (page: number = 1, pageSize: number = 10) => {
   return useQuery({
     queryKey: queryKeys.users.all(page, pageSize),
     queryFn: () => fetchUsers(page, pageSize),
+  });
+};
+
+/**
+ * 활성 유저 목록 조회 hook (Admin용 - deleted_at이 null인 모든 유저)
+ */
+export const useActiveUsersQuery = () => {
+  return useQuery({
+    queryKey: queryKeys.users.active,
+    queryFn: fetchActiveUsers,
   });
 };
 

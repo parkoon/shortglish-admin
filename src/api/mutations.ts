@@ -17,12 +17,14 @@ import {
   createPushMessage,
   updatePushMessage,
   deletePushMessage,
+  sendPushMessageBatch,
 } from "./endpoints";
 import type {
   VideoFormData,
   SubtitleFormData,
   CategoryFormData,
   PushMessageFormData,
+  BatchSendResult,
 } from "./types";
 import type { Video, Subtitle, Category, PushMessage } from "./types";
 
@@ -154,4 +156,14 @@ export const deletePushMessageMutation = async (
   messageId: string
 ): Promise<void> => {
   return deletePushMessage(messageId);
+};
+
+/**
+ * 푸시 메시지 배치 발송 mutation 함수
+ */
+export const sendPushMessageBatchMutation = async (params: {
+  userKeys: Array<{ userKey: number; name?: string }>;
+  templateSetCode: string;
+}): Promise<BatchSendResult> => {
+  return sendPushMessageBatch(params.userKeys, params.templateSetCode);
 };

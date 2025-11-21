@@ -17,6 +17,7 @@ export const queryKeys = {
   },
   users: {
     all: (page: number, pageSize: number) => ["users", page, pageSize] as const,
+    active: ["users", "active"] as const,
   },
   pushMessages: {
     all: ["pushMessages"] as const,

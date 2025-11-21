@@ -118,6 +118,7 @@ export default function PushMessagesPage() {
 
         {selectedMessage && (
           <PushMessageSendDialog
+            key={selectedMessage.id}
             isOpen={isSendDialogOpen}
             onOpenChange={setIsSendDialogOpen}
             messageId={selectedMessage.id}

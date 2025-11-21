@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  useActiveUsersQuery,
   fetchActiveUsers,
-  sendPushMessageBatch,
+  sendPushMessageBatchMutation,
+  updatePushMessageSentAt,
   type BatchSendResult,
 } from "@/api";
 import { Button } from "@/components/ui/button";
@@ -15,10 +17,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase";
-import { getTableName } from "@/lib/table-names";
 import { ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 
 const TEST_USERS = [
   { userKey: 518165018, name: "박종혁" },
@@ -44,42 +45,67 @@ export function PushMessageSendDialog({
   onSuccess,
 }: PushMessageSendDialogProps) {
   const [sendMode, setSendMode] = useState<SendMode>("all");
-  const [isSending, setIsSending] = useState(false);
-  const [progress, setProgress] = useState({ completed: 0, total: 0 });
   const [result, setResult] = useState<BatchSendResult | null>(null);
   const [showFailedList, setShowFailedList] = useState(false);
-  const [isRetrying, setIsRetrying] = useState(false);
   const [retryingUserKeys, setRetryingUserKeys] = useState<number[]>([]);
-  const [activeUserCount, setActiveUserCount] = useState<number | null>(null);
-  const [isLoadingUserCount, setIsLoadingUserCount] = useState(false);
 
-  // 다이얼로그가 열릴 때 초기화 및 활성 유저 수 조회
-  useEffect(() => {
-    if (isOpen) {
-      setSendMode("all");
-      setIsSending(false);
-      setProgress({ completed: 0, total: 0 });
-      setResult(null);
-      setShowFailedList(false);
-      setIsRetrying(false);
-      setRetryingUserKeys([]);
-      setActiveUserCount(null);
+  // 활성 유저 조회 (React Query 사용)
+  const { data: activeUsers } = useActiveUsersQuery();
+  const activeUserCount = activeUsers?.length ?? null;
 
-      // 활성 유저 수 조회
-      setIsLoadingUserCount(true);
-      fetchActiveUsers()
-        .then((users) => {
-          setActiveUserCount(users.length);
-        })
-        .catch((error) => {
-          console.error("Failed to fetch active users count:", error);
-          setActiveUserCount(null);
-        })
-        .finally(() => {
-          setIsLoadingUserCount(false);
+  // 배치 발송 mutation
+  const sendMutation = useMutation({
+    mutationFn: sendPushMessageBatchMutation,
+    onSuccess: async (data) => {
+      setResult(data);
+      // 최소한 일부라도 성공하면 sent_at 업데이트
+      if (data.success > 0) {
+        try {
+          await updatePushMessageSentAt(messageId);
+        } catch (error) {
+          console.error("Failed to update sent_at:", error);
+          // sent_at 업데이트 실패는 무시 (발송은 성공했으므로)
+        }
+      }
+    },
+    onError: () => {
+      // 에러 발생 시 결과 초기화하지 않음 (이전 결과 유지)
+    },
+  });
+
+  // 재시도 mutation
+  const retryMutation = useMutation({
+    mutationFn: sendPushMessageBatchMutation,
+    onSuccess: (data, variables) => {
+      // 결과 업데이트
+      if (result) {
+        const retriedUserKeys = new Set(
+          variables.userKeys.map((u) => u.userKey)
+        );
+        const updatedResults = result.results.map((r) => {
+          if (retriedUserKeys.has(r.userKey)) {
+            const newResult = data.results.find(
+              (nr) => nr.userKey === r.userKey
+            );
+            return newResult || r;
+          }
+          return r;
         });
-    }
-  }, [isOpen]);
+        const success = updatedResults.filter((r) => r.success).length;
+        const failed = updatedResults.filter((r) => !r.success).length;
+
+        setResult({
+          success,
+          failed,
+          results: updatedResults,
+        });
+      }
+      setRetryingUserKeys([]);
+    },
+    onError: () => {
+      setRetryingUserKeys([]);
+    },
+  });
 
   const handleSend = async () => {
     if (!templateSetCode) {
@@ -87,8 +113,6 @@ export function PushMessageSendDialog({
       return;
     }
 
-    setIsSending(true);
-    setProgress({ completed: 0, total: 0 });
     setResult(null);
     setShowFailedList(false);
 
@@ -109,130 +133,53 @@ export function PushMessageSendDialog({
 
       if (userKeys.length === 0) {
         alert("발송할 사용자가 없습니다.");
-        setIsSending(false);
         return;
       }
 
-      // 배치 발송 실행
-      const batchResult = await sendPushMessageBatch(
+      // 배치 발송 실행 (mutation 사용)
+      sendMutation.mutate({
         userKeys,
         templateSetCode,
-        (completed, total) => {
-          setProgress({ completed, total });
-        }
-      );
-
-      setResult(batchResult);
-
-      // 최소한 일부라도 성공하면 sent_at 업데이트
-      if (batchResult.success > 0) {
-        try {
-          await supabase
-            .from(getTableName("push_message"))
-            .update({
-              sent_at: new Date().toISOString(),
-            })
-            .eq("id", messageId);
-        } catch (updateError) {
-          console.error("Failed to update sent_at:", updateError);
-          // sent_at 업데이트 실패는 무시 (발송은 성공했으므로)
-        }
-      }
+      });
     } catch (error) {
       alert(
         `발송 중 오류가 발생했습니다: ${
           error instanceof Error ? error.message : "알 수 없는 오류"
         }`
       );
-    } finally {
-      setIsSending(false);
     }
   };
 
-  const handleRetry = async (userKey: number) => {
-    if (!templateSetCode) return;
+  const handleRetry = (userKey: number) => {
+    if (!templateSetCode || !result) return;
 
-    setIsRetrying(true);
+    const user = result.results.find((r) => r.userKey === userKey);
     setRetryingUserKeys((prev) => [...prev, userKey]);
 
-    try {
-      const user = result?.results.find((r) => r.userKey === userKey);
-      await sendPushMessageBatch(
-        [{ userKey, name: user?.name }],
-        templateSetCode
-      );
-
-      // 결과 업데이트
-      if (result) {
-        const updatedResults = result.results.map((r) =>
-          r.userKey === userKey ? { ...r, success: true, error: undefined } : r
-        );
-        const success = updatedResults.filter((r) => r.success).length;
-        const failed = updatedResults.filter((r) => !r.success).length;
-
-        setResult({
-          success,
-          failed,
-          results: updatedResults,
-        });
-      }
-    } catch (error) {
-      alert(
-        `재시도 중 오류가 발생했습니다: ${
-          error instanceof Error ? error.message : "알 수 없는 오류"
-        }`
-      );
-    } finally {
-      setIsRetrying(false);
-      setRetryingUserKeys((prev) => prev.filter((key) => key !== userKey));
-    }
+    retryMutation.mutate({
+      userKeys: [{ userKey, name: user?.name }],
+      templateSetCode,
+    });
   };
 
-  const handleRetryAll = async () => {
+  const handleRetryAll = () => {
     if (!templateSetCode || !result) return;
 
     const failedUsers = result.results.filter((r) => !r.success);
     if (failedUsers.length === 0) return;
 
-    setIsRetrying(true);
     setRetryingUserKeys(failedUsers.map((u) => u.userKey));
 
-    try {
-      await sendPushMessageBatch(
-        failedUsers.map((u) => ({ userKey: u.userKey, name: u.name })),
-        templateSetCode,
-        (completed, total) => {
-          setProgress({ completed, total });
-        }
-      );
-
-      // 결과 업데이트
-      const updatedResults = result.results.map((r) =>
-        failedUsers.some((f) => f.userKey === r.userKey)
-          ? { ...r, success: true, error: undefined }
-          : r
-      );
-      const success = updatedResults.filter((r) => r.success).length;
-      const failed = updatedResults.filter((r) => !r.success).length;
-
-      setResult({
-        success,
-        failed,
-        results: updatedResults,
-      });
-    } catch (error) {
-      alert(
-        `재시도 중 오류가 발생했습니다: ${
-          error instanceof Error ? error.message : "알 수 없는 오류"
-        }`
-      );
-    } finally {
-      setIsRetrying(false);
-      setRetryingUserKeys([]);
-    }
+    retryMutation.mutate({
+      userKeys: failedUsers.map((u) => ({ userKey: u.userKey, name: u.name })),
+      templateSetCode,
+    });
   };
 
   const failedResults = result?.results.filter((r) => !r.success) || [];
+
+  const isSending = sendMutation.isPending || retryMutation.isPending;
+  const isRetrying = retryMutation.isPending;
 
   return (
     <Dialog open={isOpen} onOpenChange={isSending ? undefined : onOpenChange}>
@@ -306,27 +253,20 @@ export function PushMessageSendDialog({
             </div>
           )}
 
-          {/* 진행률 표시 */}
+          {/* 로딩 표시 */}
           {isSending && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">발송 중...</span>
-                <span className="font-medium">
-                  {progress.completed} / {progress.total} 완료
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                  style={{
-                    width: `${
-                      progress.total > 0
-                        ? (progress.completed / progress.total) * 100
-                        : 0
-                    }%`,
-                  }}
-                />
-              </div>
+            <div className="text-center py-8">
+              <div className="text-gray-600">발송 중...</div>
+            </div>
+          )}
+
+          {/* 에러 표시 */}
+          {sendMutation.error && (
+            <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">
+              에러:{" "}
+              {sendMutation.error instanceof Error
+                ? sendMutation.error.message
+                : "알 수 없는 오류"}
             </div>
           )}
 
