@@ -1,12 +1,12 @@
 "use client";
 
 import {
-  useActiveUsersQuery,
   fetchActiveUsers,
   sendPushMessageBatchMutation,
   updatePushMessageSentAt,
   type BatchSendResult,
 } from "@/api";
+import { useActiveUsersQuery } from "@/api/queries";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,7 +19,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const TEST_USERS = [
   { userKey: 518165018, name: "박종혁" },
@@ -106,6 +106,19 @@ export function PushMessageSendDialog({
       setRetryingUserKeys([]);
     },
   });
+
+  // 다이얼로그가 닫힐 때 상태 초기화
+  useEffect(() => {
+    if (!isOpen) {
+      setResult(null);
+      setShowFailedList(false);
+      setRetryingUserKeys([]);
+      setSendMode("all");
+      sendMutation.reset();
+      retryMutation.reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const handleSend = async () => {
     if (!templateSetCode) {

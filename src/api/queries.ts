@@ -10,8 +10,8 @@ import {
   fetchSubtitles,
   fetchCategories,
   fetchUsers,
-  fetchActiveUsers,
   fetchPushMessages,
+  fetchActiveUsers,
 } from "./endpoints";
 import { queryKeys } from "./query-keys";
 

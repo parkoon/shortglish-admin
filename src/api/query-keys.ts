@@ -17,7 +17,7 @@ export const queryKeys = {
   },
   users: {
     all: (page: number, pageSize: number) => ["users", page, pageSize] as const,
-    active: ["users", "active"] as const,
+    active: ["users", "active"] as const, // 활성 유저 목록 조회용
   },
   pushMessages: {
     all: ["pushMessages"] as const,
