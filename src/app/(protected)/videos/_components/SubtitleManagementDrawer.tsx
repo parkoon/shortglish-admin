@@ -23,9 +23,7 @@ import { useState, useRef, useEffect } from "react";
 import { SavedSubtitlesList } from "./SavedSubtitlesList";
 import { YouTubePlayer } from "./YouTubePlayer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Plus, XIcon, Play } from "lucide-react";
+import { Plus, XIcon } from "lucide-react";
 import { SubtitleEditDialog } from "./SubtitleEditDialog";
 import type { Subtitle } from "@/api";
 
@@ -45,7 +43,6 @@ export function SubtitleManagementDrawer({
   );
   const [editingSubtitle, setEditingSubtitle] = useState<Subtitle | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [seekTime, setSeekTime] = useState<string>("");
   const animationFrameRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
 
@@ -183,26 +180,6 @@ export function SubtitleManagementDrawer({
     animationFrameRef.current = requestAnimationFrame(checkPlayback);
   };
 
-  const handleSeekTo = () => {
-    if (!youtubePlayer) return;
-
-    const time = parseFloat(seekTime);
-    if (isNaN(time) || time < 0) {
-      alert("올바른 시간을 입력해주세요 (0 이상의 숫자)");
-      return;
-    }
-
-    clearPlaybackAnimation();
-    youtubePlayer.seekTo(time, true);
-    youtubePlayer.playVideo();
-  };
-
-  const handleSeekTimeKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSeekTo();
-    }
-  };
-
   if (!video) {
     return null;
   }
@@ -232,36 +209,7 @@ export function SubtitleManagementDrawer({
 
           {/* 자막 추가 버튼 - 고정 영역 */}
           <div className="shrink-0 border-b px-4 py-3">
-            <div className="flex justify-between items-center gap-4">
-              {/* 시간 이동 기능 */}
-              <div className="flex items-center gap-2">
-                <Label
-                  htmlFor="seek-time"
-                  className="text-sm whitespace-nowrap"
-                >
-                  시간 이동
-                </Label>
-                <Input
-                  id="seek-time"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={seekTime}
-                  onChange={(e) => setSeekTime(e.target.value)}
-                  onKeyPress={handleSeekTimeKeyPress}
-                  placeholder="초 (예: 10.5)"
-                  className="w-32"
-                  disabled={!youtubePlayer}
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleSeekTo}
-                  disabled={!youtubePlayer || !seekTime}
-                >
-                  <Play className="h-4 w-4 mr-1" />
-                </Button>
-              </div>
+            <div className="flex justify-end">
               <Button
                 size="sm"
                 onClick={handleAddClick}
@@ -304,6 +252,7 @@ export function SubtitleManagementDrawer({
               createSubtitleMutationHook.isPending ||
               updateSubtitleMutationHook.isPending
             }
+            youtubePlayer={youtubePlayer}
           />
         </div>
       </DrawerContent>

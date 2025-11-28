@@ -1,6 +1,6 @@
 "use client";
 
-import type { Subtitle } from "@/api";
+import type { Subtitle, YouTubePlayer as YouTubePlayerType } from "@/api";
 import {
   subtitleFormInputSchema,
   type SubtitleFormData,
@@ -21,6 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { Play } from "lucide-react";
 import { BlankedTextEditor } from "./BlankedTextEditor";
 
 type SubtitleDialogProps = {
@@ -29,6 +30,7 @@ type SubtitleDialogProps = {
   subtitle: Subtitle | null;
   onSave: (subtitleId: number | null, data: Partial<SubtitleFormData>) => void;
   isSaving: boolean;
+  youtubePlayer?: YouTubePlayerType | null;
 };
 
 export function SubtitleEditDialog({
@@ -37,6 +39,7 @@ export function SubtitleEditDialog({
   subtitle,
   onSave,
   isSaving,
+  youtubePlayer,
 }: SubtitleDialogProps) {
   const isEditMode = subtitle !== null;
   const form = useForm<SubtitleFormInput>({
@@ -147,6 +150,12 @@ export function SubtitleEditDialog({
     onOpenChange(false);
   };
 
+  const handlePlayAtTime = (time: number) => {
+    if (!youtubePlayer || !time || time <= 0) return;
+    youtubePlayer.seekTo(time, true);
+    youtubePlayer.playVideo();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -162,21 +171,47 @@ export function SubtitleEditDialog({
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label htmlFor="dialog-start">시작 (초)</Label>
-              <Input
-                id="dialog-start"
-                type="number"
-                step="any"
-                {...form.register("start_time", { valueAsNumber: true })}
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="dialog-start"
+                  type="number"
+                  step="any"
+                  className="flex-1"
+                  {...form.register("start_time", { valueAsNumber: true })}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handlePlayAtTime(startTime)}
+                  disabled={!youtubePlayer || !startTime || startTime <= 0}
+                  title="이 시간으로 이동하여 재생"
+                >
+                  <Play className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div className="space-y-1">
               <Label htmlFor="dialog-end">종료 (초)</Label>
-              <Input
-                id="dialog-end"
-                type="number"
-                step="any"
-                {...form.register("end_time", { valueAsNumber: true })}
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="dialog-end"
+                  type="number"
+                  step="any"
+                  className="flex-1"
+                  {...form.register("end_time", { valueAsNumber: true })}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handlePlayAtTime(endTime)}
+                  disabled={!youtubePlayer || !endTime || endTime <= 0}
+                  title="이 시간으로 이동하여 재생"
+                >
+                  <Play className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
           <div className="flex items-center justify-between space-x-2 py-2">
