@@ -22,4 +22,7 @@ export const queryKeys = {
   pushMessages: {
     all: ["pushMessages"] as const,
   },
+  youtubeInfo: {
+    byVideoId: (videoId: string) => ["youtubeInfo", videoId] as const,
+  },
 };

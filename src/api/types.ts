@@ -232,3 +232,20 @@ export type BatchSendResponse = {
   };
   message: string;
 };
+
+// ============================================
+// YouTube Info Domain
+// ============================================
+
+export type YouTubeInfoResponse = {
+  title: string;
+  thumbnail: string;
+  url: string;
+  duration: number;
+  subtitles: Array<{
+    startTime: number;
+    endTime: number;
+    en: string;
+    ko: string;
+  }>;
+};

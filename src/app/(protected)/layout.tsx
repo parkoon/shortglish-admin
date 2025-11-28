@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Video, FolderTree, LogOut, Users, Bell } from "lucide-react";
+import { Video, FolderTree, LogOut, Users, Bell, Captions } from "lucide-react";
 
 type MenuItem = {
   title: string;
@@ -20,6 +20,11 @@ const menuItems: MenuItem[] = [
     title: "영상 관리",
     href: "/videos",
     icon: Video,
+  },
+  {
+    title: "자막 제작",
+    href: "/subtitle-creator",
+    icon: Captions,
   },
   {
     title: "카테고리 관리",

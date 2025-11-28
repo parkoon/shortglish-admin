@@ -12,6 +12,7 @@ import {
   fetchUsers,
   fetchPushMessages,
   fetchActiveUsers,
+  fetchYouTubeInfo,
 } from "./endpoints";
 import { queryKeys } from "./query-keys";
 
@@ -96,5 +97,20 @@ export const usePushMessagesQuery = () => {
   return useQuery({
     queryKey: queryKeys.pushMessages.all,
     queryFn: fetchPushMessages,
+  });
+};
+
+// ============================================
+// YouTube Info Queries
+// ============================================
+
+/**
+ * YouTube 영상 정보 및 자막 조회 hook
+ */
+export const useYouTubeInfoQuery = (videoId: string | undefined) => {
+  return useQuery({
+    queryKey: queryKeys.youtubeInfo.byVideoId(videoId!),
+    queryFn: () => fetchYouTubeInfo(videoId!),
+    enabled: !!videoId,
   });
 };

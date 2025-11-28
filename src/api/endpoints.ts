@@ -20,6 +20,7 @@ import type {
   BatchSendResult,
   SendResult,
   BatchSendResponse,
+  YouTubeInfoResponse,
 } from "./types";
 
 // ============================================
@@ -630,6 +631,28 @@ export const updatePushMessageSentAt = async (
   if (error) {
     throw new Error(`Failed to update sent_at: ${error.message}`);
   }
+};
+
+// ============================================
+// YouTube Info API
+// ============================================
+
+/**
+ * YouTube 영상 정보 및 자막 조회
+ */
+export const fetchYouTubeInfo = async (
+  videoId: string
+): Promise<YouTubeInfoResponse> => {
+  const response = await fetch(`/api/youtube-info?videoId=${videoId}`);
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(
+      data.message || data.error || "영상 정보를 불러오는데 실패했습니다."
+    );
+  }
+
+  return response.json();
 };
 
 /**
