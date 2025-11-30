@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { YouTubePlayer as YouTubePlayerType } from "@/api";
+import { cn } from "@/lib/utils";
 
 declare global {
   interface Window {
@@ -23,10 +24,15 @@ declare global {
 
 type YouTubePlayerProps = {
   videoId: string;
+  className?: string;
   onPlayerReady?: (player: YouTubePlayerType) => void;
 };
 
-export function YouTubePlayer({ videoId, onPlayerReady }: YouTubePlayerProps) {
+export function YouTubePlayer({
+  videoId,
+  className,
+  onPlayerReady,
+}: YouTubePlayerProps) {
   const playerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,5 +79,10 @@ export function YouTubePlayer({ videoId, onPlayerReady }: YouTubePlayerProps) {
     };
   }, [videoId, onPlayerReady]);
 
-  return <div ref={playerRef} className="aspect-video w-full bg-black" />;
+  return (
+    <div
+      ref={playerRef}
+      className={cn("aspect-video w-full bg-black", className)}
+    />
+  );
 }

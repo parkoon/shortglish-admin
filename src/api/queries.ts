@@ -12,7 +12,7 @@ import {
   fetchUsers,
   fetchPushMessages,
   fetchActiveUsers,
-  fetchYouTubeInfo,
+  fetchYouTubeSubtitles,
 } from "./endpoints";
 import { queryKeys } from "./query-keys";
 
@@ -101,16 +101,16 @@ export const usePushMessagesQuery = () => {
 };
 
 // ============================================
-// YouTube Info Queries
+// YouTube Subtitles Queries
 // ============================================
 
 /**
- * YouTube 영상 정보 및 자막 조회 hook
+ * YouTube 자막만 조회 hook (v2용)
  */
-export const useYouTubeInfoQuery = (videoId: string | undefined) => {
+export const useYouTubeSubtitlesQuery = (videoId: string | undefined) => {
   return useQuery({
-    queryKey: queryKeys.youtubeInfo.byVideoId(videoId!),
-    queryFn: () => fetchYouTubeInfo(videoId!),
+    queryKey: queryKeys.youtubeSubtitles.byVideoId(videoId!),
+    queryFn: () => fetchYouTubeSubtitles(videoId!),
     enabled: !!videoId,
   });
 };

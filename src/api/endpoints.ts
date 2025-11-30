@@ -20,7 +20,6 @@ import type {
   BatchSendResult,
   SendResult,
   BatchSendResponse,
-  YouTubeInfoResponse,
 } from "./types";
 
 // ============================================
@@ -640,19 +639,28 @@ export const updatePushMessageSentAt = async (
 /**
  * YouTube 영상 정보 및 자막 조회
  */
-export const fetchYouTubeInfo = async (
+/**
+ * YouTube 자막만 조회 (v2용)
+ */
+export const fetchYouTubeSubtitles = async (
   videoId: string
-): Promise<YouTubeInfoResponse> => {
-  const response = await fetch(`/api/youtube-info?videoId=${videoId}`);
+): Promise<Array<{ startTime: number; endTime: number; text: string }>> => {
+  const response = await fetch(
+    `/api/youtube-subtitles?videoId=${encodeURIComponent(videoId)}`
+  );
 
   if (!response.ok) {
-    const data = await response.json();
+    const error = await response
+      .json()
+      .catch(() => ({ error: "Unknown error" }));
     throw new Error(
-      data.message || data.error || "영상 정보를 불러오는데 실패했습니다."
+      error.message ||
+        `Failed to fetch YouTube subtitles: ${response.statusText}`
     );
   }
 
-  return response.json();
+  const data = await response.json();
+  return data.subtitles || [];
 };
 
 /**
