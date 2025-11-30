@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -87,26 +87,26 @@ export default function SubtitleCreatorPage() {
     setUploadedFileName(null);
   };
 
-  const handleSubtitleChange = (
-    id: number,
-    field: keyof SubtitleRow,
-    value: string | number
-  ) => {
-    setSubtitles((prev) =>
-      prev.map((sub) => {
-        if (sub.id !== id) return sub;
-        if (field === "startTime" || field === "endTime") {
-          return {
-            ...sub,
-            [field]: typeof value === "string" ? parseFloat(value) || 0 : value,
-          };
-        }
-        return { ...sub, [field]: value };
-      })
-    );
-  };
+  const handleSubtitleChange = useCallback(
+    (id: number, field: keyof SubtitleRow, value: string | number) => {
+      setSubtitles((prev) =>
+        prev.map((sub) => {
+          if (sub.id !== id) return sub;
+          if (field === "startTime" || field === "endTime") {
+            return {
+              ...sub,
+              [field]:
+                typeof value === "string" ? parseFloat(value) || 0 : value,
+            };
+          }
+          return { ...sub, [field]: value };
+        })
+      );
+    },
+    []
+  );
 
-  const handleAddSubtitle = (afterId: number) => {
+  const handleAddSubtitle = useCallback((afterId: number) => {
     setSubtitles((prev) => {
       const afterIndex = prev.findIndex((sub) => sub.id === afterId);
       if (afterIndex === -1) {
@@ -144,15 +144,15 @@ export default function SubtitleCreatorPage() {
         ...prev.slice(afterIndex + 1),
       ];
     });
-  };
+  }, []);
 
-  const handleDeleteSubtitle = (id: number) => {
+  const handleDeleteSubtitle = useCallback((id: number) => {
     if (confirm("이 자막을 삭제하시겠습니까?")) {
       setSubtitles((prev) => prev.filter((sub) => sub.id !== id));
     }
-  };
+  }, []);
 
-  const handleMoveUp = (id: number) => {
+  const handleMoveUp = useCallback((id: number) => {
     setSubtitles((prev) => {
       const index = prev.findIndex((sub) => sub.id === id);
       if (index <= 0) return prev;
@@ -164,9 +164,9 @@ export default function SubtitleCreatorPage() {
       ];
       return newSubtitles;
     });
-  };
+  }, []);
 
-  const handleMoveDown = (id: number) => {
+  const handleMoveDown = useCallback((id: number) => {
     setSubtitles((prev) => {
       const index = prev.findIndex((sub) => sub.id === id);
       if (index === -1 || index >= prev.length - 1) return prev;
@@ -178,9 +178,9 @@ export default function SubtitleCreatorPage() {
       ];
       return newSubtitles;
     });
-  };
+  }, []);
 
-  const handleDownload = () => {
+  const handleDownload = useCallback(() => {
     if (subtitles.length === 0) {
       alert("다운로드할 자막이 없습니다.");
       return;
@@ -188,7 +188,7 @@ export default function SubtitleCreatorPage() {
 
     const jsonText = exportSubtitleJson(subtitles);
     downloadJson(jsonText, fileName);
-  };
+  }, [subtitles, fileName]);
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
